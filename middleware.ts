@@ -2,6 +2,24 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  // Keep dashboard transitions snappy: avoid a network auth check here.
+  // Dashboard pages still enforce auth/org server-side via requireDashboardOrg/getOrgForUser.
+  if (pathname.startsWith("/dashboard")) {
+    const hasAuthCookie = request.cookies
+      .getAll()
+      .some(({ name }) => name.startsWith("sb-") && name.includes("auth-token"));
+
+    if (!hasAuthCookie) {
+      const loginUrl = request.nextUrl.clone();
+      loginUrl.pathname = "/login";
+      return NextResponse.redirect(loginUrl);
+    }
+
+    return NextResponse.next({ request });
+  }
+
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -29,15 +47,6 @@ export async function middleware(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-
-  const { pathname } = request.nextUrl;
-
-  // Protect all /dashboard routes
-  if (pathname.startsWith("/dashboard") && !user) {
-    const loginUrl = request.nextUrl.clone();
-    loginUrl.pathname = "/login";
-    return NextResponse.redirect(loginUrl);
-  }
 
   // Redirect authenticated users away from auth pages.
   // Final destination is resolved server-side in /auth/post-login.

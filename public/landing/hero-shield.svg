@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 180" fill="none">
+  <defs>
+    <linearGradient id="shieldGrad" x1="80" y1="20" x2="80" y2="160" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#5645d4" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#391c57" stop-opacity="0.7"/>
+    </linearGradient>
+    <linearGradient id="rimGrad" x1="80" y1="24" x2="80" y2="156">
+      <stop stop-color="#1aae39" stop-opacity="0.6"/>
+      <stop offset="1" stop-color="#2a9d99" stop-opacity="0.3"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="80" cy="165" rx="48" ry="8" fill="#5645d4" opacity="0.15"/>
+  <path d="M80 24 L128 48 V96 C128 128 108 152 80 164 C52 152 32 128 32 96 V48 Z" fill="url(#shieldGrad)" stroke="url(#rimGrad)" stroke-width="2.5"/>
+  <path d="M80 52 L104 64 V92 C104 110 94 124 80 132 C66 124 56 110 56 92 V64 Z" fill="white" fill-opacity="0.12"/>
+  <path d="M68 88 L76 96 L96 72" stroke="#1aae39" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

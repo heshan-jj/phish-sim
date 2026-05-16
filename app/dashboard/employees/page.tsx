@@ -1,14 +1,8 @@
-import { getEmployeesPageData } from "@/app/dashboard/employees/_actions";
-import { EmployeesClient } from "@/app/dashboard/employees/employees-client";
-import { redirect } from "next/navigation";
+import { EmployeesContent } from "@/app/dashboard/employees/employees-content";
+import { EmployeesContentSkeleton } from "@/components/dashboard/employees-content-skeleton";
+import { Suspense } from "react";
 
-export default async function EmployeesPage() {
-  const data = await getEmployeesPageData();
-
-  if (!data) {
-    redirect("/login");
-  }
-
+export default function EmployeesPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
@@ -27,10 +21,9 @@ export default async function EmployeesPage() {
         </p>
       </div>
 
-      <EmployeesClient
-        initialEmployees={data.employees}
-        departments={data.departments}
-      />
+      <Suspense fallback={<EmployeesContentSkeleton />}>
+        <EmployeesContent />
+      </Suspense>
     </div>
   );
 }

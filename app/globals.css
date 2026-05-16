@@ -137,16 +137,180 @@
   --ds-warning: #dd5b00;
   --ds-success: #1aae39;
   --ds-lavender: #e6e0f5;
+
+  /* Landing hero — matte black + glass */
+  --ds-hero-matte: #0a0a0a;
+  --ds-hero-matte-mid: #141414;
+  --ds-glass-bg: rgba(255, 255, 255, 0.08);
+  --ds-glass-bg-strong: rgba(255, 255, 255, 0.14);
+  --ds-glass-border: rgba(255, 255, 255, 0.18);
+  --ds-glass-blur: 16px;
+  --ds-landing-surface: #f4f4f5;
+  --ds-landing-canvas: #fafaf9;
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
-  body {
-    @apply bg-background text-foreground;
-  }
   html {
     @apply font-sans;
+    overflow-y: auto;
+    overflow-x: clip;
+    scrollbar-gutter: stable;
+    scroll-padding-top: calc(72px + env(safe-area-inset-top));
   }
+  body {
+    @apply bg-background text-foreground;
+    overflow-y: auto;
+    overflow-x: clip;
+  }
+  html.landing-menu-open,
+  body.landing-menu-open {
+    overflow: hidden;
+  }
+}
+
+/* Utility: hide scrollbars while preserving scroll behavior */
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none !important;
+  scrollbar-color: transparent transparent !important;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  background: transparent !important;
+}
+
+.hide-scrollbar::-webkit-scrollbar-thumb,
+.hide-scrollbar::-webkit-scrollbar-track {
+  display: none !important;
+  background: transparent !important;
+}
+
+/* Themed scrollbar (Firefox) — skip elements that hide their scrollbar */
+@supports (scrollbar-color: auto) {
+  *:not(.hide-scrollbar) {
+    scrollbar-width: thin;
+    scrollbar-color: var(--ds-primary) var(--ds-surface);
+  }
+}
+
+/* Themed scrollbar (WebKit) */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--ds-surface);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--ds-primary) 0%, var(--ds-primary-deep) 100%);
+  border: 2px solid var(--ds-surface);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--ds-primary-pressed);
+}
+
+::-webkit-scrollbar-corner {
+  background: var(--ds-surface);
+}
+
+/* Landing glassmorphism */
+.landing-glass {
+  backdrop-filter: blur(var(--ds-glass-blur));
+  -webkit-backdrop-filter: blur(var(--ds-glass-blur));
+  background: var(--ds-glass-bg);
+  border: 1px solid var(--ds-glass-border);
+}
+
+.landing-glass-strong {
+  backdrop-filter: blur(var(--ds-glass-blur));
+  -webkit-backdrop-filter: blur(var(--ds-glass-blur));
+  background: var(--ds-glass-bg-strong);
+  border: 1px solid var(--ds-glass-border);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.06) inset,
+    0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+.landing-glass-primary {
+  backdrop-filter: blur(var(--ds-glass-blur));
+  -webkit-backdrop-filter: blur(var(--ds-glass-blur));
+  background: color-mix(in srgb, var(--ds-primary) 28%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ds-primary) 45%, var(--ds-glass-border));
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.08) inset,
+    0 8px 32px rgba(0, 0, 0, 0.25);
+}
+
+.landing-glass-nav {
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  background: rgba(10, 10, 10, 0.35);
+  border-bottom: 1px solid var(--ds-glass-border);
+}
+
+/* Hero CTAs — glass + brand colour on hover (motion-enhanced; CSS fallback) */
+.hero-cta-primary {
+  backdrop-filter: blur(var(--ds-glass-blur));
+  -webkit-backdrop-filter: blur(var(--ds-glass-blur));
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--ds-primary) 38%, transparent) 0%,
+    color-mix(in srgb, var(--ds-brand-purple) 22%, transparent) 100%
+  );
+  border: 1px solid color-mix(in srgb, var(--ds-primary) 50%, var(--ds-glass-border));
+  transition:
+    background 0.25s ease,
+    border-color 0.25s ease,
+    color 0.2s ease;
+}
+
+.group\/hero-cta:hover .hero-cta-primary,
+.group\/hero-cta:focus-visible .hero-cta-primary {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--ds-primary) 58%, transparent) 0%,
+    color-mix(in srgb, var(--ds-brand-purple) 38%, transparent) 55%,
+    color-mix(in srgb, var(--ds-brand-pink) 18%, transparent) 100%
+  );
+  border-color: color-mix(in srgb, var(--ds-brand-purple) 55%, white);
+  color: #fff;
+}
+
+.hero-cta-secondary {
+  backdrop-filter: blur(var(--ds-glass-blur));
+  -webkit-backdrop-filter: blur(var(--ds-glass-blur));
+  background: var(--ds-glass-bg);
+  border: 1px solid var(--ds-glass-border);
+  transition:
+    background 0.25s ease,
+    border-color 0.25s ease,
+    color 0.2s ease;
+}
+
+.group\/hero-cta:hover .hero-cta-secondary,
+.group\/hero-cta:focus-visible .hero-cta-secondary {
+  background: color-mix(in srgb, var(--ds-glass-bg-strong) 90%, var(--ds-brand-teal) 10%);
+  border-color: color-mix(in srgb, var(--ds-brand-teal) 40%, var(--ds-glass-border));
+  color: #fff;
+}
+
+.group\/hero-cta:focus-visible {
+  outline: none;
+}
+
+.group\/hero-cta:focus-visible .hero-cta-primary,
+.group\/hero-cta:focus-visible .hero-cta-secondary {
+  outline: 2px solid color-mix(in srgb, var(--ds-primary) 60%, white);
+  outline-offset: 3px;
 }

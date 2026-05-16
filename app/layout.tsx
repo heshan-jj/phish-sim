@@ -3,7 +3,10 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "PhishSim",
+  title: {
+    default: "PhishSim",
+    template: "%s | PhishSim",
+  },
   description: "Phishing simulation and security awareness training",
 };
 

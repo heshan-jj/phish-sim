@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
+import { BrandLogo } from "@/components/brand/brand-logo";
 import { CheckCircle2, Loader2, Upload } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -252,12 +253,7 @@ export default function OnboardingPage() {
     >
       {/* Wordmark */}
       <div className="mb-10">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/images/textlogo.svg"
-          alt="PhishSim"
-          className="h-16 w-auto"
-        />
+        <BrandLogo variant="full" className="h-16 w-auto" />
       </div>
 
       <div className="w-full max-w-[520px]">

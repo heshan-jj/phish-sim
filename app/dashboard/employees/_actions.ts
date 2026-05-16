@@ -1,10 +1,6 @@
 "use server";
 
-import {
-  getDepartmentsByOrg,
-  getEmployeeEmails,
-  listEmployeesByOrg,
-} from "@/lib/db/queries/employees";
+import { getEmployeeEmails, listEmployeesByOrg } from "@/lib/db/queries/employees";
 import { getOrgForUser } from "@/lib/org";
 import {
   createServerClient,
@@ -26,16 +22,20 @@ export interface ImportEmployeesResult {
   error?: string;
 }
 
-export async function getEmployeesPageData() {
-  const org = await getOrgForUser();
-  if (!org) return null;
+function deriveDepartments(
+  employees: Awaited<ReturnType<typeof listEmployeesByOrg>>,
+) {
+  const set = new Set<string>();
+  for (const employee of employees) {
+    const dept = employee.department?.trim();
+    if (dept) set.add(dept);
+  }
+  return [...set].sort((a, b) => a.localeCompare(b));
+}
 
-  const [employees, departments] = await Promise.all([
-    listEmployeesByOrg(org.id),
-    getDepartmentsByOrg(org.id),
-  ]);
-
-  return { employees, departments };
+export async function getEmployeesPageData(orgId: string) {
+  const employees = await listEmployeesByOrg(orgId);
+  return { employees, departments: deriveDepartments(employees) };
 }
 
 function normalizeEmail(email: string) {
