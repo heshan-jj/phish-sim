@@ -1,5 +1,6 @@
 import { createBrowserClient as createSupabaseBrowserClient } from "@supabase/ssr";
 import { createServerClient as createSupabaseServerClient } from "@supabase/ssr";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 
 function getSupabaseEnv() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -17,6 +18,20 @@ function getSupabaseEnv() {
 export function createBrowserClient() {
   const { url, anonKey } = getSupabaseEnv();
   return createSupabaseBrowserClient(url, anonKey);
+}
+
+export function createServiceRoleClient() {
+  const { url } = getSupabaseEnv();
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!serviceRoleKey) return null;
+
+  return createSupabaseClient(url, serviceRoleKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  });
 }
 
 export async function createServerClient() {

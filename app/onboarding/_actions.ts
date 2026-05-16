@@ -2,7 +2,7 @@
 
 import { db } from "@/lib/db";
 import { organizations } from "@/lib/db/schema";
-import { createServerClient } from "@/lib/supabase";
+import { createServerClient, createServiceRoleClient } from "@/lib/supabase";
 import { eq } from "drizzle-orm";
 
 export interface OrgContext {
@@ -24,6 +24,8 @@ export async function saveStep1(
 
 export async function uploadLogo(formData: FormData) {
   const supabase = await createServerClient();
+  const serviceRoleClient = createServiceRoleClient();
+  const storageClient = serviceRoleClient ?? supabase;
 
   const {
     data: { user },
@@ -38,14 +40,27 @@ export async function uploadLogo(formData: FormData) {
     throw new Error("No file provided");
   }
 
+  if (file.size > 2 * 1024 * 1024) {
+    throw new Error("Logo must be 2 MB or smaller");
+  }
+
   const ext = file.name.split(".").pop() ?? "png";
   const path = `${user.id}/logo.${ext}`;
+  const fileBuffer = await file.arrayBuffer();
 
-  const { error: uploadError } = await supabase.storage
+  const { error: uploadError } = await storageClient.storage
     .from("logos")
-    .upload(path, file, { upsert: true });
+    .upload(path, fileBuffer, {
+      upsert: true,
+      contentType: file.type || undefined,
+    });
 
   if (uploadError) {
+    if (!serviceRoleClient) {
+      throw new Error(
+        `Upload failed: ${uploadError.message}. Add a Storage INSERT policy for bucket "logos", or set SUPABASE_SERVICE_ROLE_KEY for server-side uploads.`,
+      );
+    }
     throw new Error(`Upload failed: ${uploadError.message}`);
   }
 
