@@ -1,4 +1,4 @@
-import { asc, eq } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import {
   campaignEmployees,
@@ -80,18 +80,28 @@ export async function getCampaignAnalytics(
   const [campaignRows, empRows, eventRows] = await Promise.all([
     db.select().from(campaigns).where(eq(campaigns.id, campaignId)).limit(1),
 
+    // Pivot to campaign_events as the source so employees who have events
+    // but no campaign_employees record (e.g. clicked but not compromised)
+    // are still included. LEFT JOIN campaign_employees for their status.
     db
-      .select({
-        employeeId: campaignEmployees.employeeId,
+      .selectDistinct({
+        employeeId: employees.id,
         status: campaignEmployees.status,
         name: employees.name,
         email: employees.email,
         department: employees.department,
         role: employees.role,
       })
-      .from(campaignEmployees)
-      .innerJoin(employees, eq(campaignEmployees.employeeId, employees.id))
-      .where(eq(campaignEmployees.campaignId, campaignId)),
+      .from(campaignEvents)
+      .innerJoin(employees, eq(campaignEvents.employeeId, employees.id))
+      .leftJoin(
+        campaignEmployees,
+        and(
+          eq(campaignEmployees.campaignId, campaignEvents.campaignId),
+          eq(campaignEmployees.employeeId, campaignEvents.employeeId),
+        ),
+      )
+      .where(eq(campaignEvents.campaignId, campaignId)),
 
     db
       .select({
@@ -147,10 +157,13 @@ export async function getCampaignAnalytics(
           )
         : null;
 
+    // status is null when there is no campaign_employees record yet
+    const status = emp.status ?? (sentEvt ? "sent" : "pending");
+
     let displayAction: EmployeeRow["displayAction"] = "Pending";
-    if (emp.status === "compromised") displayAction = "Compromised";
-    else if (emp.status === "reported") displayAction = "Reported";
-    else if (emp.status === "safe") displayAction = "Safe";
+    if (status === "compromised") displayAction = "Compromised";
+    else if (status === "reported") displayAction = "Reported";
+    else if (status === "safe") displayAction = "Safe";
     else if (hasClicked) displayAction = "Clicked";
     else if (sentEvt) displayAction = "Sent";
 
@@ -163,7 +176,7 @@ export async function getCampaignAnalytics(
       email: emp.email,
       department: emp.department,
       role: emp.role,
-      status: emp.status,
+      status,
       hasOpened,
       hasClicked,
       timeToActionMinutes,
@@ -171,9 +184,12 @@ export async function getCampaignAnalytics(
     };
   });
 
-  const totalSent = empRows.length;
   const compromises = employeeRows.filter((e) => e.status === "compromised").length;
   const reports = employeeRows.filter((e) => e.status === "reported").length;
+  // Deduplicate: count each employee once (selectDistinct handles DB-level dedup,
+  // but guard against any edge-case duplicates from the join)
+  const uniqueIds = new Set(employeeRows.map((e) => e.employeeId));
+  const totalSent = uniqueIds.size;
 
   const pct = (n: number) =>
     totalSent > 0 ? Math.round((n / totalSent) * 100) : 0;

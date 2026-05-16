@@ -7,6 +7,54 @@ import {
   createServiceRoleClient,
 } from "@/lib/supabase/server";
 
+/**
+ * Deletes a single employee by ID. Verifies the employee belongs to the
+ * current user's organisation before deleting.
+ */
+export async function deleteEmployee(employeeId: string): Promise<{ error?: string }> {
+  const org = await getOrgForUser();
+  if (!org) return { error: "Unauthenticated" };
+
+  const supabase = createServiceRoleClient() ?? (await createServerClient());
+
+  const { data: employee, error: fetchError } = await supabase
+    .from("employees")
+    .select("id")
+    .eq("id", employeeId)
+    .eq("org_id", org.id)
+    .maybeSingle();
+
+  if (fetchError) return { error: fetchError.message };
+  if (!employee) return { error: "Employee not found" };
+
+  const { error } = await supabase
+    .from("employees")
+    .delete()
+    .eq("id", employeeId)
+    .eq("org_id", org.id);
+
+  if (error) return { error: error.message };
+  return {};
+}
+
+/**
+ * Deletes ALL employees belonging to the current user's organisation.
+ */
+export async function deleteAllEmployees(): Promise<{ deleted: number; error?: string }> {
+  const org = await getOrgForUser();
+  if (!org) return { deleted: 0, error: "Unauthenticated" };
+
+  const supabase = createServiceRoleClient() ?? (await createServerClient());
+
+  const { error, count } = await supabase
+    .from("employees")
+    .delete({ count: "exact" })
+    .eq("org_id", org.id);
+
+  if (error) return { deleted: 0, error: error.message };
+  return { deleted: count ?? 0 };
+}
+
 export interface CsvEmployeeRow {
   name: string;
   email: string;

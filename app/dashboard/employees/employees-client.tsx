@@ -1,6 +1,12 @@
 "use client";
 
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { AlertTriangle, Trash2 } from "lucide-react";
 import { EmployeeCsvImportDialog } from "@/app/dashboard/employees/employee-csv-import-dialog";
+import { deleteEmployee, deleteAllEmployees } from "@/app/dashboard/employees/_actions";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import {
@@ -11,7 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 
 export interface EmployeeListItem {
   id: string;
@@ -41,35 +47,66 @@ export function EmployeesClient({
   initialEmployees,
   departments,
 }: EmployeesClientProps) {
+  const router = useRouter();
+  const [employees, setEmployees] = useState(initialEmployees);
   const [search, setSearch] = useState("");
   const [departmentFilter, setDepartmentFilter] = useState("all");
+  const [confirmId, setConfirmId] = useState<string | null>(null);
+  const [confirmDeleteAll, setConfirmDeleteAll] = useState(false);
+  const [isPending, startTransition] = useTransition();
 
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase();
-
-    return initialEmployees.filter((employee) => {
+    return employees.filter((employee) => {
       if (
         departmentFilter !== "all" &&
         (employee.department ?? "") !== departmentFilter
-      ) {
-        return false;
-      }
-
+      ) return false;
       if (!query) return true;
-
-      const haystack = [
-        employee.name,
-        employee.email,
-        employee.department ?? "",
-      ]
+      return [employee.name, employee.email, employee.department ?? ""]
         .join(" ")
-        .toLowerCase();
-
-      return haystack.includes(query);
+        .toLowerCase()
+        .includes(query);
     });
-  }, [initialEmployees, search, departmentFilter]);
+  }, [employees, search, departmentFilter]);
 
-  if (initialEmployees.length === 0) {
+  function handleDeleteClick(id: string) {
+    setConfirmId(id);
+  }
+
+  function handleCancelDelete() {
+    setConfirmId(null);
+  }
+
+  function handleConfirmDeleteAll() {
+    startTransition(async () => {
+      const { deleted, error } = await deleteAllEmployees();
+      if (error) {
+        toast.error(`Failed to delete employees: ${error}`);
+      } else {
+        setEmployees([]);
+        toast.success(`Deleted ${deleted} employee${deleted !== 1 ? "s" : ""}`);
+        router.refresh();
+      }
+      setConfirmDeleteAll(false);
+    });
+  }
+
+  function handleConfirmDelete(id: string) {
+    startTransition(async () => {
+      const { error } = await deleteEmployee(id);
+      if (error) {
+        toast.error(`Failed to delete employee: ${error}`);
+      } else {
+        setEmployees((prev) => prev.filter((e) => e.id !== id));
+        toast.success("Employee deleted");
+        router.refresh();
+      }
+      setConfirmId(null);
+    });
+  }
+
+  if (employees.length === 0) {
     return (
       <div
         className="rounded-[12px] border px-8 py-16 text-center"
@@ -129,6 +166,38 @@ export function EmployeesClient({
           borderColor: "var(--ds-hairline)",
         }}
       >
+        {/* Delete-all confirmation banner */}
+        {confirmDeleteAll && (
+          <div
+            className="flex items-center gap-3 px-5 py-3 border-b text-[13px]"
+            style={{ backgroundColor: "#fde0ec", borderColor: "#fca5a5" }}
+          >
+            <AlertTriangle className="size-4 shrink-0" style={{ color: "#e03131" }} />
+            <span className="font-[500]" style={{ color: "#7f1d1d" }}>
+              This will permanently delete all {employees.length} employee{employees.length !== 1 ? "s" : ""} and their campaign history. This cannot be undone.
+            </span>
+            <div className="ml-auto flex items-center gap-2 shrink-0">
+              <Button
+                size="sm"
+                disabled={isPending}
+                onClick={handleConfirmDeleteAll}
+                className="h-7 rounded-[6px] px-3 text-[11px] font-[600]"
+                style={{ backgroundColor: "#e03131", color: "#fff" }}
+              >
+                {isPending ? "Deleting…" : `Yes, delete all ${employees.length}`}
+              </Button>
+              <button
+                onClick={() => setConfirmDeleteAll(false)}
+                disabled={isPending}
+                className="text-[11px] font-[500] hover:underline"
+                style={{ color: "#991b1b" }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+
         <Table>
           <TableHeader>
             <TableRow>
@@ -153,33 +222,88 @@ export function EmployeesClient({
                 </TableCell>
               </TableRow>
             ) : (
-              filtered.map((employee) => (
-                <TableRow key={employee.id}>
-                  <TableCell className="font-medium">{employee.name}</TableCell>
-                  <TableCell>{employee.email}</TableCell>
-                  <TableCell>{displayValue(employee.department)}</TableCell>
-                  <TableCell>{displayValue(employee.role)}</TableCell>
-                  <TableCell>{formatSeniority(employee.seniority)}</TableCell>
-                  <TableCell>—</TableCell>
-                  <TableCell className="text-right">
-                    <span
-                      className="text-[13px]"
-                      style={{ color: "var(--ds-muted)" }}
-                      title="Coming soon"
-                    >
-                      —
-                    </span>
-                  </TableCell>
-                </TableRow>
-              ))
+              filtered.map((employee) => {
+                const isConfirming = confirmId === employee.id;
+                const isDeleting = isPending && confirmId === employee.id;
+
+                return (
+                  <TableRow key={employee.id}>
+                    <TableCell className="font-medium">{employee.name}</TableCell>
+                    <TableCell>{employee.email}</TableCell>
+                    <TableCell>{displayValue(employee.department)}</TableCell>
+                    <TableCell>{displayValue(employee.role)}</TableCell>
+                    <TableCell>{formatSeniority(employee.seniority)}</TableCell>
+                    <TableCell>—</TableCell>
+                    <TableCell className="text-right">
+                      {!isConfirming ? (
+                        <button
+                          onClick={() => handleDeleteClick(employee.id)}
+                          className="inline-flex items-center justify-center rounded-[6px] p-1.5 transition-colors hover:bg-[#fde0ec]"
+                          style={{ color: "var(--ds-stone)" }}
+                          title="Delete employee"
+                        >
+                          <Trash2 className="size-3.5" />
+                        </button>
+                      ) : (
+                        <div className="inline-flex items-center gap-2 justify-end">
+                          <AlertTriangle
+                            className="size-3.5 shrink-0"
+                            style={{ color: "#dd5b00" }}
+                          />
+                          <span
+                            className="text-[12px] font-[500]"
+                            style={{ color: "var(--ds-charcoal)" }}
+                          >
+                            Delete?
+                          </span>
+                          <Button
+                            size="sm"
+                            disabled={isDeleting}
+                            onClick={() => handleConfirmDelete(employee.id)}
+                            className="h-7 rounded-[6px] px-2.5 text-[11px] font-[600]"
+                            style={{ backgroundColor: "#e03131", color: "#fff" }}
+                          >
+                            {isDeleting ? "Deleting…" : "Yes, delete"}
+                          </Button>
+                          <button
+                            onClick={handleCancelDelete}
+                            disabled={isDeleting}
+                            className="text-[11px] font-[500] hover:underline"
+                            style={{ color: "var(--ds-steel)" }}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                );
+              })
             )}
           </TableBody>
         </Table>
-      </div>
 
-      <p className="text-[13px]" style={{ color: "var(--ds-steel)" }}>
-        Showing {filtered.length} of {initialEmployees.length} employees
-      </p>
+        {/* Footer: count + delete-all trigger */}
+        <div
+          className="flex items-center justify-between px-4 py-3 border-t text-[13px]"
+          style={{ borderColor: "var(--ds-hairline)" }}
+        >
+          <span style={{ color: "var(--ds-steel)" }}>
+            Showing {filtered.length} of {employees.length} employee{employees.length !== 1 ? "s" : ""}
+          </span>
+          {!confirmDeleteAll && (
+            <button
+              onClick={() => setConfirmDeleteAll(true)}
+              disabled={isPending || employees.length === 0}
+              className="inline-flex items-center gap-1.5 text-[12px] font-[500] hover:underline disabled:opacity-40"
+              style={{ color: "#e03131" }}
+            >
+              <Trash2 className="size-3.5" />
+              Delete all
+            </button>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
