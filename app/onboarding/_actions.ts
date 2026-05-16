@@ -2,7 +2,7 @@
 
 import { db } from "@/lib/db";
 import { organizations } from "@/lib/db/schema";
-import { createServerClient } from "@/lib/supabase";
+import { createServerClient } from "@/lib/supabase/server";
 import { eq } from "drizzle-orm";
 
 export interface OrgContext {
