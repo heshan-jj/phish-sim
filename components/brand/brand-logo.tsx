@@ -10,9 +10,9 @@ const VARIANTS = {
   },
   lockup: {
     src: "/images/logo-lockup.svg",
-    width: 140,
-    height: 36,
-    defaultClassName: "h-9 w-auto",
+    width: 1500,
+    height: 620,
+    defaultClassName: "h-11 w-auto",
   },
   icon: {
     src: "/images/logo-icon.svg",

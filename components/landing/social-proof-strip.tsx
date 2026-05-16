@@ -6,13 +6,13 @@ import { staggerFast, fadeUp, easeOut } from "./motion-config";
 import { landingContainer, landingSectionY } from "./landing-layout";
 
 const LOGOS = [
-  { src: "/landing/logos/industry-saas.svg", name: "SaaS", width: 100 },
-  { src: "/landing/logos/industry-finance.svg", name: "Finance", width: 100 },
-  { src: "/landing/logos/industry-health.svg", name: "Healthcare", width: 100 },
-  { src: "/landing/logos/industry-retail.svg", name: "Retail", width: 100 },
-  { src: "/landing/logos/industry-tech.svg", name: "Technology", width: 100 },
-  { src: "/landing/logos/industry-enterprise.svg", name: "Enterprise", width: 110 },
-];
+  { src: "/landing/logos/microsoft.svg", name: "Microsoft", width: 110 },
+  { src: "/landing/logos/google.svg", name: "Google", width: 90 },
+  { src: "/landing/logos/amazon.svg", name: "Amazon", width: 100 },
+  { src: "/landing/logos/cisco.svg", name: "Cisco", width: 80 },
+  { src: "/landing/logos/ibm.svg", name: "IBM", width: 70 },
+  { src: "/landing/logos/salesforce.svg", name: "Salesforce", width: 120 },
+] as const;
 
 function LogoGrid() {
   return (
@@ -28,11 +28,11 @@ function LogoGrid() {
           key={logo.name}
           variants={fadeUp}
           transition={{ duration: 0.5, ease: easeOut }}
-          className="flex items-center justify-center py-3 px-2 opacity-60"
+          className="flex items-center justify-center py-3 px-2 opacity-80"
         >
           <Image
             src={logo.src}
-            alt={`${logo.name} industry`}
+            alt={`${logo.name} logo`}
             width={logo.width}
             height={32}
             className="h-8 w-auto max-w-full"
@@ -77,8 +77,8 @@ export function SocialProofStrip() {
               transition={{ duration: 0.55, ease: easeOut }}
               className="relative overflow-hidden overscroll-x-none"
             >
-              <div className="pointer-events-none absolute left-0 top-0 z-10 h-full w-14 bg-gradient-to-r from-[var(--ds-landing-canvas)] to-transparent sm:w-24" />
-              <div className="pointer-events-none absolute right-0 top-0 z-10 h-full w-14 bg-gradient-to-l from-[var(--ds-landing-canvas)] to-transparent sm:w-24" />
+              <div className="pointer-events-none absolute left-0 top-0 z-10 h-full w-14 bg-[var(--ds-landing-canvas)] opacity-90 sm:w-24" />
+              <div className="pointer-events-none absolute right-0 top-0 z-10 h-full w-14 bg-[var(--ds-landing-canvas)] opacity-90 sm:w-24" />
 
               <motion.div
                 className="flex w-max items-center gap-6 sm:gap-8"
@@ -92,7 +92,7 @@ export function SocialProofStrip() {
                   >
                     <Image
                       src={logo.src}
-                      alt={`${logo.name} industry`}
+                      alt={`${logo.name} logo`}
                       width={logo.width}
                       height={32}
                       className="h-8 w-auto max-w-full"

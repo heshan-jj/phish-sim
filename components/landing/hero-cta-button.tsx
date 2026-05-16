@@ -56,8 +56,8 @@ export function HeroCtaButton({
             transition={{ duration: 0.25 }}
             style={{
               background: isPrimary
-                ? "linear-gradient(135deg, var(--ds-primary) 0%, var(--ds-brand-purple) 45%, var(--ds-brand-pink) 100%)"
-                : "linear-gradient(135deg, var(--ds-brand-teal) 0%, var(--ds-primary) 55%, var(--ds-brand-purple) 100%)",
+                ? "color-mix(in srgb, var(--ds-primary) 55%, transparent)"
+                : "color-mix(in srgb, var(--ds-brand-teal) 38%, transparent)",
               filter: "blur(10px)",
             }}
             aria-hidden
@@ -95,15 +95,15 @@ export function HeroCtaButton({
               transition={{ duration: 0.2 }}
               style={{
                 background: isPrimary
-                  ? "linear-gradient(120deg, color-mix(in srgb, var(--ds-primary) 70%, transparent) 0%, color-mix(in srgb, var(--ds-brand-purple) 45%, transparent) 50%, color-mix(in srgb, var(--ds-brand-pink) 25%, transparent) 100%)"
-                  : "linear-gradient(120deg, rgba(255,255,255,0.1) 0%, color-mix(in srgb, var(--ds-brand-teal) 22%, transparent) 100%)",
+                  ? "color-mix(in srgb, var(--ds-primary) 42%, transparent)"
+                  : "color-mix(in srgb, var(--ds-brand-teal) 22%, transparent)",
               }}
               aria-hidden
             />
 
             {isPrimary && (
               <motion.span
-                className="absolute inset-0 skew-x-12 bg-gradient-to-r from-transparent via-white/35 to-transparent pointer-events-none"
+                className="absolute inset-0 skew-x-12 bg-white/30 pointer-events-none"
                 variants={{
                   rest: { x: "-120%" },
                   hover: { x: "220%" },
@@ -123,8 +123,7 @@ export function HeroCtaButton({
                 }}
                 transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
                 style={{
-                  background:
-                    "linear-gradient(90deg, transparent, var(--ds-brand-teal), var(--ds-primary), transparent)",
+                  backgroundColor: "var(--ds-primary)",
                 }}
                 aria-hidden
               />

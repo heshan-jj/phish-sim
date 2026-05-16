@@ -10,20 +10,21 @@ import { PricingSection } from "./pricing-section";
 import { FAQSection } from "./faq-section";
 import { FinalCTA } from "./final-cta";
 import { LandingFooter } from "./landing-footer";
+import type { LandingAuthProps } from "./types";
 
-export function LandingPage() {
+export function LandingPage({ isAuthenticated }: LandingAuthProps) {
   return (
     <div>
-      <LandingNav />
+      <LandingNav isAuthenticated={isAuthenticated} />
       <main>
-        <HeroSection />
+        <HeroSection isAuthenticated={isAuthenticated} />
         <SocialProofStrip />
         <FeatureGrid />
         <HowItWorks />
         <StatsBand />
-        <PricingSection />
-        <FAQSection />
-        <FinalCTA />
+        <PricingSection isAuthenticated={isAuthenticated} />
+        <FAQSection isAuthenticated={isAuthenticated} />
+        <FinalCTA isAuthenticated={isAuthenticated} />
       </main>
       <LandingFooter />
     </div>

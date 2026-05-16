@@ -71,7 +71,7 @@ export function NavCta3D({
             )}
           >
             <motion.span
-              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/25 to-transparent skew-x-12 pointer-events-none"
+              className="absolute inset-0 bg-white/25 skew-x-12 pointer-events-none"
               variants={{
                 rest: { x: "-100%" },
                 hover: { x: "200%" },

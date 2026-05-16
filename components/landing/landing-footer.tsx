@@ -79,9 +79,9 @@ export function LandingFooter() {
     >
       <div className={`${landingContainer} py-12 md:py-16`}>
         <div className="flex flex-col gap-10 md:flex-row md:justify-between md:gap-12">
-          <div className="shrink-0 md:max-w-[240px]">
-            <Link href="/" className="inline-block mb-3">
-              <BrandLogo variant="full" className="h-12 w-auto max-w-[220px]" />
+          <div className="shrink-0 md:max-w-[340px]">
+            <Link href="/" className="inline-block mb-4">
+              <BrandLogo variant="full" className="h-20 w-auto max-w-[320px]" />
             </Link>
           </div>
 

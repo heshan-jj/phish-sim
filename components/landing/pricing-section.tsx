@@ -6,6 +6,7 @@ import { Check } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { easeOut, fadeUp, springSnappy, staggerFast } from "./motion-config";
 import { landingContainer, landingSectionY } from "./landing-layout";
+import type { LandingAuthProps } from "./types";
 
 type Plan = {
   name: string;
@@ -65,11 +66,13 @@ function PlanCard({
   yearly,
   prefersReduced,
   enableHover,
+  isAuthenticated,
 }: {
   plan: Plan;
   yearly: boolean;
   prefersReduced: boolean | null;
   enableHover: boolean;
+  isAuthenticated: boolean;
 }) {
   const price = yearly ? plan.yearly : plan.monthly;
 
@@ -116,14 +119,14 @@ function PlanCard({
       </div>
 
       <Link
-        href="/signup"
+        href={isAuthenticated ? "/dashboard" : "/signup"}
         className={`mt-6 inline-flex min-h-[44px] w-full items-center justify-center rounded-[10px] px-4 py-2 text-sm font-medium transition-colors ${
           plan.popular
             ? "bg-white text-[#0f1d40] hover:bg-[#f4f6ff]"
             : "bg-[#5645d4] text-white hover:bg-[#4534b3]"
         }`}
       >
-        {plan.cta}
+        {isAuthenticated ? "Go to dashboard" : plan.cta}
       </Link>
 
       <ul className="mt-6 space-y-3">
@@ -141,9 +144,11 @@ function PlanCard({
 function PricingCarousel({
   yearly,
   prefersReduced,
+  isAuthenticated,
 }: {
   yearly: boolean;
   prefersReduced: boolean | null;
+  isAuthenticated: boolean;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -172,7 +177,13 @@ function PricingCarousel({
       >
         {PLANS.map((plan) => (
           <div key={plan.name} className="snap-center shrink-0 w-[min(88vw,340px)]">
-            <PlanCard plan={plan} yearly={yearly} prefersReduced={prefersReduced} enableHover={false} />
+            <PlanCard
+              plan={plan}
+              yearly={yearly}
+              prefersReduced={prefersReduced}
+              enableHover={false}
+              isAuthenticated={isAuthenticated}
+            />
           </div>
         ))}
       </div>
@@ -199,7 +210,7 @@ function PricingCarousel({
   );
 }
 
-export function PricingSection() {
+export function PricingSection({ isAuthenticated }: LandingAuthProps) {
   const [yearly, setYearly] = useState(false);
   const prefersReduced = useReducedMotion();
 
@@ -251,7 +262,11 @@ export function PricingSection() {
           </motion.div>
         </motion.div>
 
-        <PricingCarousel yearly={yearly} prefersReduced={prefersReduced} />
+        <PricingCarousel
+          yearly={yearly}
+          prefersReduced={prefersReduced}
+          isAuthenticated={isAuthenticated}
+        />
 
         <motion.div
           variants={staggerFast}
@@ -267,6 +282,7 @@ export function PricingSection() {
               yearly={yearly}
               prefersReduced={prefersReduced}
               enableHover
+              isAuthenticated={isAuthenticated}
             />
           ))}
         </motion.div>

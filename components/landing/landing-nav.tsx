@@ -16,6 +16,7 @@ import {
   navSheetItem,
   navSheetStagger,
 } from "./motion-config";
+import type { LandingAuthProps } from "./types";
 
 const navLinks = [
   { label: "Product", href: "#features" },
@@ -24,7 +25,7 @@ const navLinks = [
   { label: "FAQ", href: "#faq" },
 ];
 
-export function LandingNav() {
+export function LandingNav({ isAuthenticated }: LandingAuthProps) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const prefersReduced = useReducedMotion();
@@ -149,20 +150,32 @@ export function LandingNav() {
                 className="hidden lg:flex items-center gap-2"
                 variants={prefersReduced ? undefined : navItem}
               >
-                <NavLoginLink href="/login" variant={linkVariant}>
-                  Log in
-                </NavLoginLink>
-                <NavCta3D href="/signup" variant={ctaVariant}>
-                  Start free
-                </NavCta3D>
+                {isAuthenticated ? (
+                  <NavCta3D href="/dashboard" variant={ctaVariant}>
+                    Go to dashboard
+                  </NavCta3D>
+                ) : (
+                  <>
+                    <NavLoginLink href="/login" variant={linkVariant}>
+                      Log in
+                    </NavLoginLink>
+                    <NavCta3D href="/signup" variant={ctaVariant}>
+                      Start free
+                    </NavCta3D>
+                  </>
+                )}
               </motion.div>
 
               <motion.div
                 className="flex lg:hidden items-center gap-2"
                 variants={prefersReduced ? undefined : navItem}
               >
-                <NavCta3D href="/signup" compact variant={ctaVariant}>
-                  Start free
+                <NavCta3D
+                  href={isAuthenticated ? "/dashboard" : "/signup"}
+                  compact
+                  variant={ctaVariant}
+                >
+                  {isAuthenticated ? "Dashboard" : "Start free"}
                 </NavCta3D>
                 <motion.button
                   id="mobile-menu-toggle"
@@ -203,8 +216,7 @@ export function LandingNav() {
               className="fixed top-0 right-0 bottom-0 z-[70] w-[min(85vw,320px)] flex flex-col overflow-hidden"
               style={{
                 paddingBottom: "env(safe-area-inset-bottom)",
-                background:
-                  "linear-gradient(180deg, #e6e0f5 0%, #ffffff 120px, #ffffff 100%)",
+                backgroundColor: "var(--ds-landing-canvas)",
               }}
               role="dialog"
               aria-modal="true"
@@ -257,22 +269,36 @@ export function LandingNav() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.15 }}
               >
-                <NavLoginLink
-                  href="/login"
-                  variant="sheet"
-                  onClick={() => setMobileOpen(false)}
-                >
-                  Log in
-                </NavLoginLink>
-                <div className="w-full">
-                  <NavCta3D
-                    href="/signup"
-                    className="w-full [&_a]:w-full [&_span]:w-full"
-                    onClick={() => setMobileOpen(false)}
-                  >
-                    Start simulating free
-                  </NavCta3D>
-                </div>
+                {isAuthenticated ? (
+                  <div className="w-full">
+                    <NavCta3D
+                      href="/dashboard"
+                      className="w-full [&_a]:w-full [&_span]:w-full"
+                      onClick={() => setMobileOpen(false)}
+                    >
+                      Go to dashboard
+                    </NavCta3D>
+                  </div>
+                ) : (
+                  <>
+                    <NavLoginLink
+                      href="/login"
+                      variant="sheet"
+                      onClick={() => setMobileOpen(false)}
+                    >
+                      Log in
+                    </NavLoginLink>
+                    <div className="w-full">
+                      <NavCta3D
+                        href="/signup"
+                        className="w-full [&_a]:w-full [&_span]:w-full"
+                        onClick={() => setMobileOpen(false)}
+                      >
+                        Start simulating free
+                      </NavCta3D>
+                    </div>
+                  </>
+                )}
               </motion.div>
             </motion.div>
           </>

@@ -5,6 +5,7 @@ import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { ChevronDown, HelpCircle } from "lucide-react";
 import { easeOut, springSnappy, staggerFast, fadeUp } from "./motion-config";
 import { landingContainer, landingSectionY } from "./landing-layout";
+import type { LandingAuthProps } from "./types";
 
 const faqs = [
   {
@@ -114,7 +115,7 @@ function FAQItem({
   );
 }
 
-export function FAQSection() {
+export function FAQSection({ isAuthenticated }: LandingAuthProps) {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
   const prefersReduced = useReducedMotion();
 
@@ -179,10 +180,10 @@ export function FAQSection() {
         >
           Still have questions?{" "}
           <a
-            href="/signup"
+            href={isAuthenticated ? "/dashboard" : "/signup"}
             className="font-medium text-[#5645d4] underline-offset-2 hover:underline"
           >
-            Start free
+            {isAuthenticated ? "Go to dashboard" : "Start free"}
           </a>{" "}
           and explore the dashboard, or jump to{" "}
           <a

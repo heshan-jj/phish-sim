@@ -5,8 +5,9 @@ import { motion, useReducedMotion } from "framer-motion";
 import Link from "next/link";
 import { easeOut } from "./motion-config";
 import { landingContainer, landingSectionY } from "./landing-layout";
+import type { LandingAuthProps } from "./types";
 
-export function FinalCTA() {
+export function FinalCTA({ isAuthenticated }: LandingAuthProps) {
   const prefersReduced = useReducedMotion();
 
   return (
@@ -47,20 +48,32 @@ export function FinalCTA() {
           </p>
 
           <div className="flex flex-col w-full max-w-xs mx-auto gap-3 sm:flex-row sm:max-w-none sm:justify-center relative z-10">
-            <Link
-              href="/signup"
-              id="final-cta-primary"
-              className="inline-flex w-full sm:w-auto items-center justify-center px-6 py-3 text-sm font-medium rounded-[8px] bg-[#5645d4] text-white hover:bg-[#4534b3] transition-colors min-h-[44px]"
-            >
-              Start free
-            </Link>
-            <Link
-              href="/login"
-              id="final-cta-login"
-              className="inline-flex w-full sm:w-auto items-center justify-center px-6 py-3 text-sm font-medium rounded-[8px] border border-[var(--ds-hairline-strong)] text-[#5d5b54] hover:bg-[var(--ds-surface)] transition-colors min-h-[44px]"
-            >
-              Log in
-            </Link>
+            {isAuthenticated ? (
+              <Link
+                href="/dashboard"
+                id="final-cta-dashboard"
+                className="inline-flex w-full sm:w-auto items-center justify-center px-6 py-3 text-sm font-medium rounded-[8px] bg-[#5645d4] text-white hover:bg-[#4534b3] transition-colors min-h-[44px]"
+              >
+                Go to dashboard
+              </Link>
+            ) : (
+              <>
+                <Link
+                  href="/signup"
+                  id="final-cta-primary"
+                  className="inline-flex w-full sm:w-auto items-center justify-center px-6 py-3 text-sm font-medium rounded-[8px] bg-[#5645d4] text-white hover:bg-[#4534b3] transition-colors min-h-[44px]"
+                >
+                  Start free
+                </Link>
+                <Link
+                  href="/login"
+                  id="final-cta-login"
+                  className="inline-flex w-full sm:w-auto items-center justify-center px-6 py-3 text-sm font-medium rounded-[8px] border border-[var(--ds-hairline-strong)] text-[#5d5b54] hover:bg-[var(--ds-surface)] transition-colors min-h-[44px]"
+                >
+                  Log in
+                </Link>
+              </>
+            )}
           </div>
         </motion.div>
       </div>

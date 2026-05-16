@@ -8,6 +8,7 @@ import { HeroCtaButton } from "./hero-cta-button";
 import { HERO_BACKGROUND_SRC } from "./landing-theme";
 import { easeOut, staggerContainer, fadeUp, ctaPop } from "./motion-config";
 import { landingContainer } from "./landing-layout";
+import type { LandingAuthProps } from "./types";
 
 const DOT_COLORS_DESKTOP = [
   { color: "#ff64c8", size: 14, top: "12%", left: "6%" },
@@ -67,7 +68,7 @@ function FloatingDot({
   );
 }
 
-export function HeroSection() {
+export function HeroSection({ isAuthenticated }: LandingAuthProps) {
   const prefersReduced = useReducedMotion();
 
   return (
@@ -89,14 +90,13 @@ export function HeroSection() {
           aria-hidden
         />
         <motion.div
-          className="absolute inset-0 bg-gradient-to-b from-black/75 via-black/55 to-[var(--ds-hero-matte)]"
+          className="absolute inset-0 bg-black/60"
           aria-hidden
         />
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
-            background:
-              "radial-gradient(ellipse 80% 60% at 50% 20%, transparent 0%, rgba(0,0,0,0.45) 100%)",
+            backgroundColor: "rgba(0, 0, 0, 0.25)",
           }}
           aria-hidden
         />
@@ -187,8 +187,12 @@ export function HeroSection() {
             className="flex flex-col w-full max-w-sm mx-auto gap-3 sm:flex-row sm:max-w-none sm:justify-center"
           >
             <motion.div variants={ctaPop} transition={{ duration: 0.5, ease: easeOut }}>
-              <HeroCtaButton href="/signup" id="hero-cta-primary" variant="primary">
-                Start simulating free
+              <HeroCtaButton
+                href={isAuthenticated ? "/dashboard" : "/signup"}
+                id="hero-cta-primary"
+                variant="primary"
+              >
+                {isAuthenticated ? "Go to dashboard" : "Start simulating free"}
               </HeroCtaButton>
             </motion.div>
             <motion.div variants={ctaPop} transition={{ duration: 0.5, ease: easeOut }}>
