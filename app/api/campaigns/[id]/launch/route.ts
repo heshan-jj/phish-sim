@@ -272,9 +272,14 @@ export async function POST(
   //   optionally spreading sends within the campaign window.
   const sendImmediately = settings?.sendImmediately ?? true;
   const staggerSends = settings?.staggerSends ?? false;
+  const sharedEmail = settings?.sharedEmail ?? false;
   const baseSendDate =
     !sendImmediately && campaign.schedule ? campaign.schedule : null;
   let nextImmediateScheduledAt = new Date();
+
+  // When sharedEmail is enabled, pick a single variation before the loop so
+  // every recipient receives identical content (only their tracking token differs).
+  const sharedVariation = sharedEmail ? pickTemplateVariation(template) : null;
 
   let queued = 0;
 
@@ -312,21 +317,34 @@ export async function POST(
           });
 
           const token = crypto.randomUUID();
-          const { firstName, lastName } = fullNameParts(employee.name);
-          const variation = pickTemplateVariation(template);
           const actionUrl = new URL(
             `/login/${campaign.id}/${token}`,
             origin,
           ).toString();
-          const placeholders = {
-            firstName,
-            lastName,
-            department: employee.department ?? "General",
-            employeeId: employee.id,
-            employeeEmail: employee.email,
-            companyName: org.name,
-            variation,
-          };
+
+          const variation = sharedEmail ? sharedVariation! : pickTemplateVariation(template);
+          const placeholders = sharedEmail
+            ? {
+                firstName: "there",
+                lastName: "",
+                department: "your team",
+                employeeId: "",
+                employeeEmail: "",
+                companyName: org.name,
+                variation,
+              }
+            : (() => {
+                const { firstName, lastName } = fullNameParts(employee.name);
+                return {
+                  firstName,
+                  lastName,
+                  department: employee.department ?? "General",
+                  employeeId: employee.id,
+                  employeeEmail: employee.email,
+                  companyName: org.name,
+                  variation,
+                };
+              })();
           const subject = personalizeText(template.subject, placeholders);
           const preheader = personalizeText(template.preheader, placeholders);
           const emailBody = renderCampaignEmail({

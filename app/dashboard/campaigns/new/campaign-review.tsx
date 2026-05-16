@@ -150,6 +150,10 @@ export function CampaignReview({
               value={settings.staggerSends ? "Yes (template delays)" : "No"}
             />
             <SummaryRow
+              label="Shared email"
+              value={settings.sharedEmail ? "Yes — generic content" : "No"}
+            />
+            <SummaryRow
               label="Difficulty override"
               value={settings.difficultyOverride ? "Yes" : "No"}
             />

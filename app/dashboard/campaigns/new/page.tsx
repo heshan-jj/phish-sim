@@ -32,6 +32,7 @@ const DEFAULT_SETTINGS: CampaignSettingsFormValues = {
   sendImmediately: true,
   scheduleAt: "",
   staggerSends: false,
+  sharedEmail: false,
 };
 
 export default function NewCampaignPage() {
@@ -105,6 +106,7 @@ export default function NewCampaignPage() {
       staggerSends: settings.staggerSends,
       difficultyOverride: settings.difficultyOverride,
       sendImmediately: settings.sendImmediately,
+      sharedEmail: settings.sharedEmail,
     };
   }
 

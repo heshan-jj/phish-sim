@@ -7,4 +7,5 @@ export interface CampaignSettings {
   staggerSends: boolean;
   difficultyOverride: boolean;
   sendImmediately: boolean;
+  sharedEmail: boolean;
 }

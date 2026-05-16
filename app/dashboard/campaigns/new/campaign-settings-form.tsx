@@ -37,6 +37,7 @@ export interface CampaignSettingsFormValues {
   sendImmediately: boolean;
   scheduleAt: string;
   staggerSends: boolean;
+  sharedEmail: boolean;
 }
 
 interface CampaignSettingsFormProps {
@@ -328,6 +329,25 @@ export function CampaignSettingsForm({
         <Switch
           checked={values.staggerSends}
           onCheckedChange={(staggerSends) => onChange({ staggerSends })}
+        />
+      </div>
+
+      <div
+        className="flex items-center justify-between gap-4 rounded-[8px] border p-4"
+        style={{ borderColor: "var(--ds-hairline)" }}
+      >
+        <div>
+          <p className="text-[14px] font-[500]" style={{ color: "var(--ds-ink)" }}>
+            Shared email
+          </p>
+          <p className="text-[13px]" style={{ color: "var(--ds-steel)" }}>
+            Send one generic email to all recipients — no per-employee personalisation.
+            Useful for testing and reduces token usage.
+          </p>
+        </div>
+        <Switch
+          checked={values.sharedEmail}
+          onCheckedChange={(sharedEmail) => onChange({ sharedEmail })}
         />
       </div>
 
