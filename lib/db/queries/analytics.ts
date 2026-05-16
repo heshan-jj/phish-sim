@@ -1,5 +1,6 @@
 import { and, asc, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
+import { withDbRetry } from "@/lib/db/retry";
 import {
   campaignEmployees,
   campaignEvents,
@@ -77,42 +78,44 @@ export type CampaignAnalyticsData = {
 export async function getCampaignAnalytics(
   campaignId: string,
 ): Promise<CampaignAnalyticsData | null> {
-  const [campaignRows, empRows, eventRows] = await Promise.all([
-    db.select().from(campaigns).where(eq(campaigns.id, campaignId)).limit(1),
+  const [campaignRows, empRows, eventRows] = await withDbRetry(() =>
+    Promise.all([
+      db.select().from(campaigns).where(eq(campaigns.id, campaignId)).limit(1),
 
-    // Pivot to campaign_events as the source so employees who have events
-    // but no campaign_employees record (e.g. clicked but not compromised)
-    // are still included. LEFT JOIN campaign_employees for their status.
-    db
-      .selectDistinct({
-        employeeId: employees.id,
-        status: campaignEmployees.status,
-        name: employees.name,
-        email: employees.email,
-        department: employees.department,
-        role: employees.role,
-      })
-      .from(campaignEvents)
-      .innerJoin(employees, eq(campaignEvents.employeeId, employees.id))
-      .leftJoin(
-        campaignEmployees,
-        and(
-          eq(campaignEmployees.campaignId, campaignEvents.campaignId),
-          eq(campaignEmployees.employeeId, campaignEvents.employeeId),
-        ),
-      )
-      .where(eq(campaignEvents.campaignId, campaignId)),
+      // Pivot to campaign_events as the source so employees who have events
+      // but no campaign_employees record (e.g. clicked but not compromised)
+      // are still included. LEFT JOIN campaign_employees for their status.
+      db
+        .selectDistinct({
+          employeeId: employees.id,
+          status: campaignEmployees.status,
+          name: employees.name,
+          email: employees.email,
+          department: employees.department,
+          role: employees.role,
+        })
+        .from(campaignEvents)
+        .innerJoin(employees, eq(campaignEvents.employeeId, employees.id))
+        .leftJoin(
+          campaignEmployees,
+          and(
+            eq(campaignEmployees.campaignId, campaignEvents.campaignId),
+            eq(campaignEmployees.employeeId, campaignEvents.employeeId),
+          ),
+        )
+        .where(eq(campaignEvents.campaignId, campaignId)),
 
-    db
-      .select({
-        employeeId: campaignEvents.employeeId,
-        action: campaignEvents.action,
-        createdAt: campaignEvents.createdAt,
-      })
-      .from(campaignEvents)
-      .where(eq(campaignEvents.campaignId, campaignId))
-      .orderBy(asc(campaignEvents.createdAt)),
-  ]);
+      db
+        .select({
+          employeeId: campaignEvents.employeeId,
+          action: campaignEvents.action,
+          createdAt: campaignEvents.createdAt,
+        })
+        .from(campaignEvents)
+        .where(eq(campaignEvents.campaignId, campaignId))
+        .orderBy(asc(campaignEvents.createdAt)),
+    ]),
+  );
 
   if (!campaignRows[0]) return null;
 

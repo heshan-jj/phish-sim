@@ -14,7 +14,7 @@ import {
   smishingToEmailHtml,
 } from "@/lib/ai-launch";
 import { parseOrgContext } from "@/lib/org-context";
-import { assertMinimaxConfigured } from "@/lib/ai";
+import { assertAiConfigured } from "@/lib/ai";
 import { db } from "@/lib/db";
 import { listEmployeesByOrg } from "@/lib/db/queries/employees";
 import { campaignEvents, campaigns, organizations } from "@/lib/db/schema";
@@ -239,7 +239,7 @@ export async function POST(
 
   if (contentMode !== "static") {
     try {
-      assertMinimaxConfigured();
+      assertAiConfigured();
     } catch (err) {
       return NextResponse.json(
         {

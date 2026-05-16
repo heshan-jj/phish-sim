@@ -56,17 +56,41 @@ DATABASE_URL=postgresql://postgres.<ref>:<password>@aws-0-<region>.pooler.supaba
 
 > The `DATABASE_URL` is used by Drizzle ORM for server-side writes (server actions). It bypasses Row Level Security, so keep it server-side only — never prefix it with `NEXT_PUBLIC_`.
 
-### MiniMax AI (optional)
+### AI content generation (optional)
 
-For AI-generated campaign content (`contentMode: ai` or `hybrid`), set:
+For AI-generated campaign content (`contentMode: ai` or `hybrid`), configure either **MiniMax** (default) or **Nasiko** on your VPS:
 
 ```env
+# Use Nasiko gateway (falls back to MiniMax on failure)
+AI_PROVIDER=nasiko
+NASIKO_BASE_URL=http://<your-vps>:9100
+NASIKO_ACCESS_KEY=<from orchestrator/superuser_credentials.json>
+NASIKO_ACCESS_SECRET=<from orchestrator/superuser_credentials.json>
+NASIKO_AGENT_ROUTE=http://<your-vps>:9100/agents/agent-phish-sim-content-v2
+MINIMAX_API_KEY=<your-key>   # still recommended for fallback
+
+# Or MiniMax only
+AI_PROVIDER=minimax
 MINIMAX_API_KEY=<your-key>
 MINIMAX_MODEL=MiniMax-M2.7
 AI_LAUNCH_CONCURRENCY=2
 ```
 
-See `.env.local.example` for all AI-related variables. Campaigns with `contentMode: static` (default) do not require MiniMax.
+See `.env.local.example` for all AI-related variables. Campaigns with `contentMode: static` (default) do not require an AI provider.
+
+Deploy the PhishSim agent before using `AI_PROVIDER=nasiko`:
+
+```bash
+npm run agent:zip
+```
+
+Upload `agents/a2a-phish-sim-content.zip` in the Nasiko UI (**Add Agent → Upload ZIP**, name: `phish-sim-content`).
+
+**Troubleshooting Nasiko**
+
+- Set `NASIKO_AGENT_ROUTE` to the **running** Kong path (`docker ps | grep agent-`). If you uploaded as `phish-sim-content-v2`, use `/agents/agent-phish-sim-content-v2` (not the old ghost container name).
+- Direct agent calls bypass the router LLM. Recommended when `ROUTER_LLM_PROVIDER=minimax` (MiniMax often returns thinking text instead of router JSON).
+- On the VPS, use OpenAI for routing: `ROUTER_LLM_PROVIDER=openai`, `ROUTER_LLM_MODEL=gpt-4o-mini`, then `docker compose ... up -d --force-recreate nasiko-router`.
 
 ---
 

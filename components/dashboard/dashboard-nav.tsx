@@ -14,6 +14,7 @@ const NAV_ITEMS = [
   { href: "/dashboard", label: "Overview", exact: true },
   { href: "/dashboard/employees", label: "Employees", exact: false },
   { href: "/dashboard/campaigns", label: "Campaigns", exact: false },
+  { href: "/dashboard/nasiko/logs", label: "Nasiko logs", exact: false },
 ] as const;
 
 function isActive(pathname: string, href: string, exact: boolean) {

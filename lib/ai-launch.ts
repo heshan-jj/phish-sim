@@ -13,7 +13,7 @@ import {
   renderCampaignEmail,
 } from "@/lib/campaign-templates";
 import type { OrgContext } from "@/app/onboarding/_actions";
-import { assertMinimaxConfigured } from "@/lib/ai";
+import { assertAiConfigured } from "@/lib/ai";
 
 const AI_CONCURRENCY = Math.max(
   1,
@@ -109,7 +109,7 @@ export async function resolvePhishingEmailContent(
   }
 
   try {
-    assertMinimaxConfigured();
+    assertAiConfigured();
     const input = buildGenerationInput({
       employee,
       orgContext,
@@ -166,7 +166,7 @@ export async function resolveVoiceScript(params: {
   locale?: string;
 }): Promise<{ script: VoiceScript; aiFallback: boolean }> {
   try {
-    assertMinimaxConfigured();
+    assertAiConfigured();
     const input = buildGenerationInput({
       employee: params.employee,
       orgContext: params.orgContext,
@@ -198,7 +198,7 @@ export async function resolveSmishingContent(params: {
   locale?: string;
 }): Promise<{ message: string; senderLabel: string; aiFallback: boolean }> {
   try {
-    assertMinimaxConfigured();
+    assertAiConfigured();
     const input = buildGenerationInput({
       employee: params.employee,
       orgContext: params.orgContext,

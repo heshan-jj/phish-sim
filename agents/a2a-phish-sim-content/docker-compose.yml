@@ -1,0 +1,18 @@
+services:
+  a2a-phish-sim-content:
+    build: .
+    container_name: a2a-phish-sim-content
+    environment:
+      - MINIMAX_API_KEY=${MINIMAX_API_KEY:-}
+      - MINIMAX_BASE_URL=${MINIMAX_BASE_URL:-https://api.minimax.io/v1}
+      - MINIMAX_MODEL=${MINIMAX_MODEL:-MiniMax-M2.7}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+    ports:
+      - "5000"
+    networks:
+      - agents-net
+
+networks:
+  agents-net:
+    external: true

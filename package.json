@@ -12,7 +12,8 @@
     "db:studio": "drizzle-kit studio",
     "seed": "tsx scripts/seed.ts",
     "assets:favicon": "node scripts/generate-favicon.mjs",
-    "test": "tsx --test lib/__tests__/ai.test.ts"
+    "agent:zip": "python scripts/agent-zip.py",
+    "test": "tsx --test lib/__tests__/*.test.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",

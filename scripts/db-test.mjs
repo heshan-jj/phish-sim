@@ -2,6 +2,7 @@ import { config } from "dotenv";
 import postgres from "postgres";
 
 config({ path: ".env.local" });
+config({ path: ".env" });
 
 const requiredTables = [
   "organizations",

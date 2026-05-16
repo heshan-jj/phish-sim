@@ -1,3 +1,10 @@
+import {
+  callNasiko,
+  getAiProvider,
+  type LlmMessage,
+} from "@/lib/ai-nasiko";
+import { appendPlatformLog } from "@/lib/platform-logs";
+
 const MINIMAX_API_URL =
   process.env.MINIMAX_API_BASE_URL ??
   "https://api.minimaxi.chat/v1/text/chatcompletion_v2";
@@ -41,10 +48,7 @@ export interface VoiceScript {
   callerRole: string;
 }
 
-interface MinimaxMessage {
-  role: "system" | "user" | "assistant";
-  content: string;
-}
+type MinimaxMessage = LlmMessage;
 
 class JsonExtractionError extends Error {
   constructor(
@@ -109,6 +113,8 @@ function preview(value: string): string {
 
 // ─── MiniMax API call ─────────────────────────────────────────────────────────
 
+export { assertAiConfigured } from "@/lib/ai-nasiko";
+
 export function assertMinimaxConfigured(): void {
   if (!process.env.MINIMAX_API_KEY) {
     throw new Error("MINIMAX_API_KEY environment variable is not set");
@@ -169,6 +175,44 @@ async function callMinimax(
   }
 
   return content;
+}
+
+async function callLlm(
+  messages: MinimaxMessage[],
+  temperature: number,
+): Promise<{ raw: string; provider: "nasiko" | "minimax" }> {
+  if (getAiProvider() !== "nasiko") {
+    return {
+      raw: await callMinimax(messages, temperature),
+      provider: "minimax",
+    };
+  }
+
+  try {
+    return {
+      raw: await callNasiko(messages, temperature),
+      provider: "nasiko",
+    };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.warn("[ai] Nasiko call failed, falling back to MiniMax", {
+      error: message,
+    });
+    appendPlatformLog({
+      level: "WARNING",
+      source: "phish-sim-ai",
+      message: `Nasiko failed, using MiniMax fallback: ${message.slice(0, 200)}`,
+    });
+
+    if (!process.env.MINIMAX_API_KEY) {
+      throw err instanceof Error ? err : new Error(message);
+    }
+
+    return {
+      raw: await callMinimax(messages, temperature),
+      provider: "minimax",
+    };
+  }
 }
 
 // ─── JSON extraction + retry harness ─────────────────────────────────────────
@@ -261,14 +305,16 @@ async function generateWithRetry<T>(
 
     try {
       const messages = buildMessages(attempt > 0);
-      const raw = await callMinimax(messages, temperature);
+      const { raw, provider } = await callLlm(messages, temperature);
       const parsed = extractJson(raw);
+      console.info("[ai] generation succeeded", { provider, attempt: attempt + 1 });
       return validate(parsed);
     } catch (err) {
       lastError = err instanceof Error ? err : new Error(String(err));
       console.error("[ai] generation attempt failed", {
         attempt: attempt + 1,
         attempts: 3,
+        provider: getAiProvider(),
         model: MINIMAX_MODEL,
         endpoint: MINIMAX_API_URL,
         error: lastError.message,

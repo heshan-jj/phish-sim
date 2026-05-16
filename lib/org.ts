@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { withDbRetry } from "@/lib/db/retry";
 import { organizations } from "@/lib/db/schema";
 import { createServerClient } from "@/lib/supabase/server";
 import { eq } from "drizzle-orm";
@@ -14,13 +15,14 @@ export const getOrgForUser = cache(async function getOrgForUser() {
 
   if (!user) return null;
 
-  const [org] = await db
-    .select()
-    .from(organizations)
-    .where(eq(organizations.userId, user.id))
-    .limit(1);
-
-  return org ?? null;
+  return withDbRetry(async () => {
+    const [org] = await db
+      .select()
+      .from(organizations)
+      .where(eq(organizations.userId, user.id))
+      .limit(1);
+    return org ?? null;
+  });
 });
 
 export async function requireDashboardOrg() {

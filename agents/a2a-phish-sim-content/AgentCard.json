@@ -1,0 +1,56 @@
+{
+  "protocolVersion": "0.2.9",
+  "name": "PhishSim Content Agent",
+  "description": "Generates realistic phishing simulation emails and related training content as structured JSON for authorized security awareness programs.",
+  "url": "http://localhost:5000/",
+  "preferredTransport": "JSONRPC",
+  "agentFramework": "a2a",
+  "provider": {
+    "organization": "PhishSim",
+    "url": "https://github.com/Nasiko-Labs/nasiko"
+  },
+  "version": "1.0.0",
+  "capabilities": {
+    "streaming": true,
+    "pushNotifications": false,
+    "stateTransitionHistory": true,
+    "chat_agent": false
+  },
+  "defaultInputModes": ["text/plain"],
+  "defaultOutputModes": ["text/plain"],
+  "skills": [
+    {
+      "id": "generate-phishing-email",
+      "name": "Generate Phishing Simulation Email",
+      "description": "Create personalized phishing simulation email content for employee security training",
+      "tags": [
+        "phishing",
+        "security awareness",
+        "simulation",
+        "email",
+        "training",
+        "social engineering"
+      ],
+      "examples": [
+        "Generate a phishing simulation email for security awareness training",
+        "Create a medium difficulty IT support phishing email for Jane in Engineering",
+        "Write a convincing phishing email with subject, body, senderName, senderEmail as JSON"
+      ],
+      "inputModes": ["text/plain", "application/json"],
+      "outputModes": ["text/plain", "application/json"]
+    },
+    {
+      "id": "generate-voice-script",
+      "name": "Generate Vishing Script",
+      "description": "Create vishing call scripts for security awareness training",
+      "tags": ["vishing", "voice phishing", "simulation", "training"],
+      "examples": [
+        "Generate a vishing call script for security training"
+      ],
+      "inputModes": ["text/plain"],
+      "outputModes": ["text/plain", "application/json"]
+    }
+  ],
+  "supportsAuthenticatedExtendedCard": false,
+  "signatures": []
+}
