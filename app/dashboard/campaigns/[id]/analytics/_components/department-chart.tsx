@@ -9,8 +9,17 @@ import {
   CartesianGrid,
   Tooltip,
   Cell,
+  Legend,
   ResponsiveContainer,
 } from "recharts";
+
+// Hardcoded hex — CSS vars don't work in SVG fill/stroke attrs
+const COLOR = {
+  grid: "#e5e3df",
+  axis: "#787671",
+  cursor: "#f6f5f4",
+  click: "#dd5b00",
+} as const;
 
 interface Props {
   data: DeptRow[];
@@ -22,21 +31,16 @@ function scoreColor(score: number): string {
   return "#1aae39";
 }
 
-function scoreBg(score: number): string {
-  if (score > 60) return "#fde0ec";
-  if (score > 30) return "#ffe8d4";
-  return "#d9f3e1";
-}
-
-interface TooltipProps {
+interface TooltipPayload {
   active?: boolean;
-  payload?: Array<{ payload: DeptRow }>;
+  payload?: Array<{ payload: DeptRow & { clickRate: number } }>;
 }
 
-function CustomTooltip({ active, payload }: TooltipProps) {
+function CustomTooltip({ active, payload }: TooltipPayload) {
   if (!active || !payload?.length) return null;
   const d = payload[0].payload;
-  const safe = d.total - d.compromised - d.reported - (d.clicked - d.compromised);
+  const clickedOnly = Math.max(0, d.clicked - d.compromised);
+  const safe = Math.max(0, d.total - d.compromised - d.reported - clickedOnly);
 
   return (
     <div
@@ -45,6 +49,7 @@ function CustomTooltip({ active, payload }: TooltipProps) {
         backgroundColor: "var(--ds-canvas)",
         borderColor: "var(--ds-hairline-strong)",
         color: "var(--ds-ink)",
+        minWidth: 200,
       }}
     >
       <p className="font-[600] mb-2">{d.department}</p>
@@ -52,21 +57,27 @@ function CustomTooltip({ active, payload }: TooltipProps) {
         <span>
           <span style={{ color: "#e03131" }}>■</span> Compromised:{" "}
           <strong style={{ color: "var(--ds-ink)" }}>{d.compromised}</strong>
+          <span className="ml-1 opacity-60">({d.vulnerabilityScore}%)</span>
+        </span>
+        <span>
+          <span style={{ color: "#dd5b00" }}>■</span> Clicked (not compromised):{" "}
+          <strong style={{ color: "var(--ds-ink)" }}>{clickedOnly}</strong>
         </span>
         <span>
           <span style={{ color: "#1aae39" }}>■</span> Reported:{" "}
           <strong style={{ color: "var(--ds-ink)" }}>{d.reported}</strong>
         </span>
         <span>
-          <span style={{ color: "var(--ds-muted)" }}>■</span> Safe:{" "}
-          <strong style={{ color: "var(--ds-ink)" }}>{Math.max(0, safe)}</strong>
+          <span style={{ color: "#bbb8b1" }}>■</span> Safe:{" "}
+          <strong style={{ color: "var(--ds-ink)" }}>{safe}</strong>
         </span>
-        <span className="mt-1 pt-1" style={{ borderTop: "1px solid var(--ds-hairline)" }}>
-          Vulnerability score:{" "}
-          <strong style={{ color: scoreColor(d.vulnerabilityScore) }}>
-            {d.vulnerabilityScore}%
-          </strong>
-        </span>
+        <div
+          className="mt-1.5 pt-1.5 flex justify-between"
+          style={{ borderTop: "1px solid var(--ds-hairline)" }}
+        >
+          <span>Total sent:</span>
+          <strong style={{ color: "var(--ds-ink)" }}>{d.total}</strong>
+        </div>
       </div>
     </div>
   );
@@ -77,57 +88,87 @@ export function DepartmentChart({ data }: Props) {
     return (
       <div
         className="flex items-center justify-center h-48 rounded-[8px] text-[14px]"
-        style={{
-          backgroundColor: "var(--ds-surface)",
-          color: "var(--ds-steel)",
-        }}
+        style={{ backgroundColor: "var(--ds-surface)", color: "var(--ds-steel)" }}
       >
         No department data yet
       </div>
     );
   }
 
-  const chartHeight = Math.max(200, data.length * 48 + 40);
+  // Add click rate (all who clicked, including those who were compromised)
+  const chartData = data.map((d) => ({
+    ...d,
+    clickRate: d.total > 0 ? Math.round((d.clicked / d.total) * 100) : 0,
+  }));
+
+  // Two bars per department — leave enough vertical space per row
+  const chartHeight = Math.max(240, data.length * 68 + 60);
 
   return (
     <div className="w-full" style={{ height: chartHeight }}>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart
           layout="vertical"
-          data={data}
+          data={chartData}
+          barCategoryGap="35%"
+          barGap={3}
           margin={{ top: 4, right: 24, bottom: 4, left: 0 }}
         >
           <CartesianGrid
             horizontal={false}
-            stroke="var(--ds-hairline)"
+            stroke={COLOR.grid}
             strokeDasharray="3 3"
           />
           <XAxis
             type="number"
             domain={[0, 100]}
             tickCount={6}
-            tick={{ fontSize: 12, fill: "var(--ds-steel)" }}
+            tick={{ fontSize: 12, fill: COLOR.axis }}
             tickLine={false}
-            axisLine={{ stroke: "var(--ds-hairline)" }}
-            tickFormatter={(v) => `${v}%`}
+            axisLine={{ stroke: COLOR.grid }}
+            tickFormatter={(v: number) => `${v}%`}
           />
           <YAxis
             type="category"
             dataKey="department"
             width={120}
-            tick={{ fontSize: 12, fill: "var(--ds-charcoal)" }}
+            tick={{ fontSize: 12, fill: "#37352f" }}
             tickLine={false}
             axisLine={false}
           />
-          <Tooltip content={<CustomTooltip />} cursor={{ fill: "var(--ds-surface)" }} />
-          <Bar dataKey="vulnerabilityScore" radius={[0, 4, 4, 0]} barSize={20}>
-            {data.map((entry, index) => (
+          <Tooltip
+            content={<CustomTooltip />}
+            cursor={{ fill: COLOR.cursor }}
+          />
+          <Legend
+            iconType="square"
+            iconSize={10}
+            wrapperStyle={{ fontSize: 12, color: "#787671", paddingTop: 10 }}
+          />
+
+          {/* Click rate bar — amber, shown first (below in grouped layout) */}
+          <Bar
+            dataKey="clickRate"
+            name="Click rate %"
+            barSize={12}
+            fill={COLOR.click}
+            fillOpacity={0.65}
+            radius={[0, 4, 4, 0]}
+          />
+
+          {/* Compromise rate bar — color-coded per threshold; fill sets the legend swatch */}
+          <Bar
+            dataKey="vulnerabilityScore"
+            name="Compromise rate %"
+            barSize={12}
+            radius={[0, 4, 4, 0]}
+            fill="#e03131"
+          >
+            {chartData.map((entry, index) => (
               <Cell
                 key={index}
                 fill={scoreColor(entry.vulnerabilityScore)}
-                fillOpacity={0.85}
-                stroke={scoreBg(entry.vulnerabilityScore)}
-                strokeWidth={0}
+                fillOpacity={0.9}
               />
             ))}
           </Bar>

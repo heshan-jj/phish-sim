@@ -12,15 +12,21 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
+// Hardcoded hex — CSS vars don't work in SVG fill/stroke attrs
+const COLOR = {
+  grid: "#e5e3df",
+  axis: "#787671",
+} as const;
+
 interface Props {
   data: TimelinePoint[];
 }
 
 const LINES = [
-  { key: "opens", label: "Opens", color: "#5645d4" },
-  { key: "clicks", label: "Clicks", color: "#dd5b00" },
+  { key: "opens",       label: "Opens",       color: "#5645d4" },
+  { key: "clicks",      label: "Clicks",      color: "#dd5b00" },
   { key: "compromises", label: "Compromises", color: "#e03131" },
-  { key: "reports", label: "Reports", color: "#1aae39" },
+  { key: "reports",     label: "Reports",     color: "#1aae39" },
 ] as const;
 
 interface TooltipProps {
@@ -32,6 +38,13 @@ interface TooltipProps {
 function CustomTooltip({ active, label, payload }: TooltipProps) {
   if (!active || !payload?.length) return null;
 
+  const header =
+    typeof label === "number"
+      ? label < 24
+        ? `${label}h after launch`
+        : `Day ${Math.floor(label / 24)}, +${label % 24}h`
+      : "";
+
   return (
     <div
       className="rounded-[10px] border px-4 py-3 text-[13px] shadow-lg"
@@ -42,16 +55,12 @@ function CustomTooltip({ active, label, payload }: TooltipProps) {
       }}
     >
       <p className="font-[600] mb-2" style={{ color: "var(--ds-steel)" }}>
-        {typeof label === "number"
-          ? label < 24
-            ? `${label}h after launch`
-            : `Day ${Math.floor(label / 24)} +${label % 24}h`
-          : ""}
+        {header}
       </p>
       {payload.map((entry) => (
-        <div key={entry.name} className="flex items-center gap-2">
+        <div key={entry.name} className="flex items-center gap-2 py-0.5">
           <span
-            className="inline-block size-2 rounded-full"
+            className="inline-block size-2 rounded-full shrink-0"
             style={{ backgroundColor: entry.color }}
           />
           <span style={{ color: "var(--ds-steel)" }}>{entry.name}:</span>
@@ -67,10 +76,7 @@ export function TimelineChart({ data }: Props) {
     return (
       <div
         className="flex items-center justify-center h-56 rounded-[8px] text-[14px]"
-        style={{
-          backgroundColor: "var(--ds-surface)",
-          color: "var(--ds-steel)",
-        }}
+        style={{ backgroundColor: "var(--ds-surface)", color: "var(--ds-steel)" }}
       >
         No events tracked yet
       </div>
@@ -84,20 +90,17 @@ export function TimelineChart({ data }: Props) {
           data={data}
           margin={{ top: 4, right: 16, bottom: 4, left: 0 }}
         >
-          <CartesianGrid
-            stroke="var(--ds-hairline)"
-            strokeDasharray="3 3"
-          />
+          <CartesianGrid stroke={COLOR.grid} strokeDasharray="3 3" />
           <XAxis
             dataKey="hourOffset"
-            tick={{ fontSize: 12, fill: "var(--ds-steel)" }}
+            tick={{ fontSize: 12, fill: COLOR.axis }}
             tickLine={false}
-            axisLine={{ stroke: "var(--ds-hairline)" }}
-            tickFormatter={(v) => `${v}h`}
+            axisLine={{ stroke: COLOR.grid }}
+            tickFormatter={(v: number) => `${v}h`}
             interval="preserveStartEnd"
           />
           <YAxis
-            tick={{ fontSize: 12, fill: "var(--ds-steel)" }}
+            tick={{ fontSize: 12, fill: COLOR.axis }}
             tickLine={false}
             axisLine={false}
             allowDecimals={false}
@@ -106,7 +109,7 @@ export function TimelineChart({ data }: Props) {
           <Legend
             iconType="circle"
             iconSize={8}
-            wrapperStyle={{ fontSize: 12, color: "var(--ds-steel)" }}
+            wrapperStyle={{ fontSize: 12, color: COLOR.axis }}
           />
           {LINES.map(({ key, label, color }) => (
             <Line
@@ -117,7 +120,7 @@ export function TimelineChart({ data }: Props) {
               stroke={color}
               strokeWidth={2}
               dot={false}
-              activeDot={{ r: 4, strokeWidth: 0 }}
+              activeDot={{ r: 4, strokeWidth: 0, fill: color }}
             />
           ))}
         </LineChart>
