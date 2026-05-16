@@ -160,19 +160,16 @@ export default function NewCampaignPage() {
   }
 
   return (
-    <div
-      className="min-h-screen flex flex-col items-center px-4 py-12"
-      style={{ backgroundColor: "var(--ds-surface)" }}
-    >
-      <div className="w-full max-w-4xl">
+    <div className="flex flex-col gap-6 max-w-4xl mx-auto w-full">
+      <div>
         <h1
-          className="text-center text-[28px] font-[600] leading-[1.25] mb-2"
+          className="text-[28px] font-[600] leading-[1.25] mb-2"
           style={{ color: "var(--ds-ink)" }}
         >
           Create campaign
         </h1>
         <p
-          className="text-center text-[14px] leading-[1.50] mb-8"
+          className="text-[14px] leading-[1.50] mb-2"
           style={{ color: "var(--ds-steel)" }}
         >
           Choose a template, configure targeting, and launch your simulation.

@@ -10,11 +10,8 @@ export default async function EmployeesPage() {
   }
 
   return (
-    <div
-      className="min-h-screen flex flex-col items-center px-4 py-12"
-      style={{ backgroundColor: "var(--ds-surface)" }}
-    >
-      <div className="w-full max-w-5xl">
+    <div className="flex flex-col gap-6">
+      <div>
         <h1
           className="text-[28px] font-[600] leading-[1.25] mb-2"
           style={{ color: "var(--ds-ink)" }}
@@ -22,18 +19,18 @@ export default async function EmployeesPage() {
           Employees
         </h1>
         <p
-          className="text-[14px] leading-[1.50] mb-8"
+          className="text-[14px] leading-[1.50]"
           style={{ color: "var(--ds-steel)" }}
         >
           Manage your organization&apos;s employee directory for phishing
           simulations and risk tracking.
         </p>
-
-        <EmployeesClient
-          initialEmployees={data.employees}
-          departments={data.departments}
-        />
       </div>
+
+      <EmployeesClient
+        initialEmployees={data.employees}
+        departments={data.departments}
+      />
     </div>
   );
 }
