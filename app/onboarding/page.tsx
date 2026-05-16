@@ -251,19 +251,13 @@ export default function OnboardingPage() {
       style={{ backgroundColor: "var(--ds-surface)" }}
     >
       {/* Wordmark */}
-      <div className="mb-10 flex items-center gap-2">
-        <div
-          className="w-8 h-8 rounded-[8px] flex items-center justify-center text-white font-bold text-sm"
-          style={{ backgroundColor: "var(--ds-primary)" }}
-        >
-          P
-        </div>
-        <span
-          className="text-[15px] font-semibold tracking-tight"
-          style={{ color: "var(--ds-ink)" }}
-        >
-          PhishSim
-        </span>
+      <div className="mb-10">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/images/textlogo.svg"
+          alt="PhishSim"
+          className="h-16 w-auto"
+        />
       </div>
 
       <div className="w-full max-w-[520px]">

@@ -40,20 +40,28 @@ export function DashboardNav({ orgName }: { orgName: string }) {
       }}
     >
       <div className="mx-auto flex h-16 max-w-6xl items-center gap-6 px-4 sm:px-6">
-        <Link href="/dashboard" className="flex shrink-0 flex-col">
-          <span
-            className="text-[15px] font-[600] leading-tight"
-            style={{ color: "var(--ds-ink)" }}
-          >
-            PhishSim
-          </span>
-          <span
-            className="text-[12px] leading-tight truncate max-w-[140px] sm:max-w-[200px]"
-            style={{ color: "var(--ds-steel)" }}
-            title={orgName}
-          >
-            {orgName}
-          </span>
+        <Link href="/dashboard" className="flex shrink-0 items-center gap-2">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/images/notextlogo.svg"
+            alt="PhishSim"
+            className="h-8 w-8 shrink-0"
+          />
+          <div className="flex flex-col">
+            <span
+              className="text-[15px] font-[600] leading-tight"
+              style={{ color: "var(--ds-ink)" }}
+            >
+              PhishSim
+            </span>
+            <span
+              className="text-[12px] leading-tight truncate max-w-[140px] sm:max-w-[200px]"
+              style={{ color: "var(--ds-steel)" }}
+              title={orgName}
+            >
+              {orgName}
+            </span>
+          </div>
         </Link>
 
         <nav className="flex flex-1 items-center gap-1 overflow-x-auto">
