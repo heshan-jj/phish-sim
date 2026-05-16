@@ -109,6 +109,7 @@ export async function DashboardOverviewContent() {
               variant="dsOutline"
               size="app"
               className="w-full"
+              nativeButton={false}
               render={<Link href="/dashboard/employees" />}
             >
               Manage employees
@@ -132,6 +133,7 @@ export async function DashboardOverviewContent() {
               variant="ds"
               size="app"
               className="w-full"
+              nativeButton={false}
               render={<Link href="/dashboard/campaigns/new" />}
             >
               <Plus className="size-4" />
@@ -141,6 +143,7 @@ export async function DashboardOverviewContent() {
               variant="dsOutline"
               size="app"
               className="w-full"
+              nativeButton={false}
               render={<Link href="/dashboard/campaigns" />}
             >
               View all campaigns
@@ -173,6 +176,7 @@ export async function DashboardOverviewContent() {
               <Button
                 variant="ds"
                 size="app"
+                nativeButton={false}
                 render={<Link href="/dashboard/campaigns/new" />}
               >
                 <Plus className="size-4" />

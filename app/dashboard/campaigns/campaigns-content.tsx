@@ -28,6 +28,7 @@ export async function CampaignsContent() {
         <Button
           variant="ds"
           size="app"
+          nativeButton={false}
           render={<Link href="/dashboard/campaigns/new" />}
         >
           <Plus className="size-4" />

@@ -24,6 +24,7 @@ export default function CampaignsPage() {
           variant="ds"
           size="app"
           className="shrink-0"
+          nativeButton={false}
           render={<Link href="/dashboard/campaigns/new" />}
         >
           <Plus className="size-4" />
