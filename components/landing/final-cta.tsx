@@ -52,7 +52,7 @@ export function FinalCTA({ isAuthenticated }: LandingAuthProps) {
               <Link
                 href="/dashboard"
                 id="final-cta-dashboard"
-                className="inline-flex w-full sm:w-auto items-center justify-center px-6 py-3 text-sm font-medium rounded-[8px] bg-[#5645d4] text-white hover:bg-[#4534b3] transition-colors min-h-[44px]"
+                className="landing-pressable inline-flex w-full sm:w-auto items-center justify-center px-6 py-3 text-sm font-medium rounded-[8px] bg-[#5645d4] text-white hover:bg-[#4534b3] hover:shadow-md min-h-[44px]"
               >
                 Go to dashboard
               </Link>
@@ -61,14 +61,14 @@ export function FinalCTA({ isAuthenticated }: LandingAuthProps) {
                 <Link
                   href="/signup"
                   id="final-cta-primary"
-                  className="inline-flex w-full sm:w-auto items-center justify-center px-6 py-3 text-sm font-medium rounded-[8px] bg-[#5645d4] text-white hover:bg-[#4534b3] transition-colors min-h-[44px]"
+                  className="landing-pressable inline-flex w-full sm:w-auto items-center justify-center px-6 py-3 text-sm font-medium rounded-[8px] bg-[#5645d4] text-white hover:bg-[#4534b3] hover:shadow-md min-h-[44px]"
                 >
                   Start free
                 </Link>
                 <Link
                   href="/login"
                   id="final-cta-login"
-                  className="inline-flex w-full sm:w-auto items-center justify-center px-6 py-3 text-sm font-medium rounded-[8px] border border-[var(--ds-hairline-strong)] text-[#5d5b54] hover:bg-[var(--ds-surface)] transition-colors min-h-[44px]"
+                  className="landing-pressable inline-flex w-full sm:w-auto items-center justify-center px-6 py-3 text-sm font-medium rounded-[8px] border border-[var(--ds-hairline-strong)] text-[#5d5b54] hover:bg-[var(--ds-surface)] hover:shadow-md min-h-[44px]"
                 >
                   Log in
                 </Link>

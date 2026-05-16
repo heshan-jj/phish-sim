@@ -274,7 +274,7 @@
 .group\/hero-cta:hover .hero-cta-primary,
 .group\/hero-cta:focus-visible .hero-cta-primary {
   background: color-mix(in srgb, var(--ds-primary) 62%, transparent);
-  border-color: color-mix(in srgb, var(--ds-brand-purple) 55%, white);
+  border-color: color-mix(in srgb, var(--ds-primary) 55%, white);
   color: #fff;
 }
 
@@ -300,8 +300,41 @@
   outline: none;
 }
 
-.group\/hero-cta:focus-visible .hero-cta-primary,
-.group\/hero-cta:focus-visible .hero-cta-secondary {
+.group\/hero-cta:focus-visible .hero-cta-primary {
   outline: 2px solid color-mix(in srgb, var(--ds-primary) 60%, white);
   outline-offset: 3px;
+}
+
+.group\/hero-cta-secondary:focus-visible .hero-cta-secondary {
+  outline: 2px solid color-mix(in srgb, var(--ds-brand-teal) 65%, white);
+  outline-offset: 3px;
+}
+
+/* Landing buttons — subtle lift + shadow (links/toggles without Framer Motion) */
+.landing-pressable {
+  transition:
+    transform 0.2s ease-out,
+    box-shadow 0.2s ease-out,
+    background-color 0.2s ease-out,
+    border-color 0.2s ease-out,
+    filter 0.2s ease-out;
+}
+
+@media (hover: hover) {
+  .landing-pressable:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(10, 21, 48, 0.12);
+  }
+
+  .landing-pressable:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(10, 21, 48, 0.08);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-pressable:hover,
+  .landing-pressable:active {
+    transform: none;
+  }
 }
