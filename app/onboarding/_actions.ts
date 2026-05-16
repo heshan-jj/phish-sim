@@ -86,3 +86,8 @@ export async function isCurrentUserOnboarded() {
   const org = await getOrgForUser();
   return Boolean(org?.onboardingCompletedAt);
 }
+
+export async function suggestOrgContextWithAi(name: string, industry: string) {
+  const { suggestOrgContext } = await import("@/lib/ai-extended");
+  return suggestOrgContext(name, industry);
+}

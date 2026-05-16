@@ -25,6 +25,7 @@ export interface GenerationInput {
   companyContext: CompanyContext;
   templateCategory: string;
   difficulty: "easy" | "medium" | "hard";
+  locale?: string;
 }
 
 export interface PhishingEmail {
@@ -108,11 +109,18 @@ function preview(value: string): string {
 
 // ─── MiniMax API call ─────────────────────────────────────────────────────────
 
-async function callMinimax(messages: MinimaxMessage[]): Promise<string> {
-  const apiKey = process.env.MINIMAX_API_KEY;
-  if (!apiKey) {
+export function assertMinimaxConfigured(): void {
+  if (!process.env.MINIMAX_API_KEY) {
     throw new Error("MINIMAX_API_KEY environment variable is not set");
   }
+}
+
+async function callMinimax(
+  messages: MinimaxMessage[],
+  temperature = 0.85,
+): Promise<string> {
+  assertMinimaxConfigured();
+  const apiKey = process.env.MINIMAX_API_KEY!;
 
   const startedAt = Date.now();
   const response = await fetch(MINIMAX_API_URL, {
@@ -125,7 +133,7 @@ async function callMinimax(messages: MinimaxMessage[]): Promise<string> {
       model: MINIMAX_MODEL,
       messages,
       max_tokens: 2048,
-      temperature: 0.85,
+      temperature,
       stream: false,
     }),
   });
@@ -165,7 +173,7 @@ async function callMinimax(messages: MinimaxMessage[]): Promise<string> {
 
 // ─── JSON extraction + retry harness ─────────────────────────────────────────
 
-function findFirstJsonObject(raw: string): string | null {
+export function findFirstJsonObject(raw: string): string | null {
   const start = raw.indexOf("{");
   if (start === -1) return null;
 
@@ -206,7 +214,7 @@ function findFirstJsonObject(raw: string): string | null {
   return null;
 }
 
-function extractJson(raw: string): unknown {
+export function extractJson(raw: string): unknown {
   const stripped = raw
     .replace(/^```(?:json)?\s*/i, "")
     .replace(/\s*```$/i, "")
@@ -242,6 +250,7 @@ const STRICT_JSON_SUFFIX =
 async function generateWithRetry<T>(
   buildMessages: (jsonStrict: boolean) => MinimaxMessage[],
   validate: (parsed: unknown) => T,
+  temperature = 0.85,
 ): Promise<T> {
   let lastError: Error | null = null;
 
@@ -252,7 +261,7 @@ async function generateWithRetry<T>(
 
     try {
       const messages = buildMessages(attempt > 0);
-      const raw = await callMinimax(messages);
+      const raw = await callMinimax(messages, temperature);
       const parsed = extractJson(raw);
       return validate(parsed);
     } catch (err) {
@@ -274,6 +283,14 @@ async function generateWithRetry<T>(
   throw lastError ?? new Error("Content generation failed after 3 attempts");
 }
 
+/** Analytical / coaching prompts use lower temperature for consistency. */
+export async function generateWithRetryLowTemp<T>(
+  buildMessages: (jsonStrict: boolean) => MinimaxMessage[],
+  validate: (parsed: unknown) => T,
+): Promise<T> {
+  return generateWithRetry(buildMessages, validate, 0.3);
+}
+
 // ─── Email generation ─────────────────────────────────────────────────────────
 
 function buildEmailMessages(
@@ -293,7 +310,7 @@ ${formatCompanyContext(input.companyContext)}
 
 Template Category: ${input.templateCategory}
 
-${difficultyGuidance(input.difficulty)}
+${difficultyGuidance(input.difficulty)}${input.locale && input.locale !== "en" ? `\nWrite all content in language/locale: ${input.locale}.` : ""}
 
 Respond with a JSON object in exactly this shape:
 {

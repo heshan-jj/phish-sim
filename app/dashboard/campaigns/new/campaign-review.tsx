@@ -8,6 +8,8 @@ import {
 } from "@/lib/campaign-templates";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { CampaignPreviewPanel } from "@/app/dashboard/campaigns/new/campaign-preview-panel";
+import { AI_LAUNCH_RECIPIENT_WARN_THRESHOLD } from "@/lib/campaign-settings";
 import { Loader2 } from "lucide-react";
 
 function SummarySection({
@@ -107,6 +109,22 @@ export function CampaignReview({
 }: CampaignReviewProps) {
   const template = getTemplateById(templateId);
 
+  const recipientCount =
+    settings.targetMode === "all"
+      ? (targeting?.employees.length ?? 0)
+      : settings.targetMode === "departments"
+        ? (targeting?.employees.filter((e) =>
+            e.department
+              ? settings.departments.includes(e.department)
+              : false,
+          ).length ?? 0)
+        : settings.employeeIds.length;
+
+  const launchBlocked =
+    settings.contentMode !== "static" &&
+    recipientCount > AI_LAUNCH_RECIPIENT_WARN_THRESHOLD &&
+    !settings.aiLargeCampaignConfirmed;
+
   return (
     <div className="flex flex-col gap-4">
       <div
@@ -157,9 +175,18 @@ export function CampaignReview({
               label="Difficulty override"
               value={settings.difficultyOverride ? "Yes" : "No"}
             />
+            <SummaryRow label="Channel" value={settings.channel} />
+            <SummaryRow label="Content mode" value={settings.contentMode} />
           </SummarySection>
         </div>
       </div>
+
+      <CampaignPreviewPanel
+        templateId={templateId}
+        settings={settings}
+        difficulty={difficulty}
+        targeting={targeting}
+      />
 
       {error && (
         <p
@@ -199,7 +226,7 @@ export function CampaignReview({
           variant="ds"
           size="app"
           onClick={onLaunch}
-          disabled={loading}
+          disabled={loading || launchBlocked}
           className="flex-1"
         >
           {loading ? (

@@ -1,0 +1,305 @@
+Fake login pages — images, logos, and names checklist
+======================================================
+
+Purpose
+-------
+Asset list for phishing-simulation landing pages shown at:
+  /login/[campaignId]/[employeeToken]
+
+Code references
+---------------
+- Variants:     components/simulations/variants/*.tsx
+- Logos (SVG):  components/simulations/logos/index.tsx  (inline today — no raster files)
+- Registry:     components/simulations/registry.ts
+- Page titles:  components/simulations/variant-meta.ts
+- Templates:    lib/campaign-templates.ts (landingPageType per campaign)
+
+Suggested storage (if you add raster/SVG files)
+-----------------------------------------------
+  public/simulations/logos/     — brand marks
+  public/simulations/favicons/  — browser tab icons (16×16, 32×32)
+  public/simulations/ui/        — optional hero/illustration backgrounds
+  public/simulations/org/       — per-tenant logos (uploaded at onboarding; see org.logoUrl)
+
+Format guidance
+---------------
+- Logos: SVG preferred (crisp at any size); PNG with transparency as fallback
+- Favicons: ICO or PNG 32×32
+- Keep file sizes small; training pages load on mobile
+- Use only marks you are licensed to use for internal security training
+
+Note: Today all brand marks are hand-drawn inline SVG components. This file lists what
+you would need if replacing them with production-quality assets.
+
+
+────────────────────────────────────────────────────────────────────────────────
+GLOBAL / SHARED
+────────────────────────────────────────────────────────────────────────────────
+
+1) Organization logo (dynamic — not a static file in repo)
+   Name:        {companyName} — from org record / campaign metadata
+   Source:      Supabase upload via onboarding (organizations.logoUrl)
+   Used on:     generic_sso (displays org name as text; logo URL not yet wired to UI)
+   Description: Customer company mark for “Company SSO” simulations. Square or
+                horizontal lockup, min ~120px wide, transparent background.
+   Suggested:   public/simulations/org/{orgId}.png (runtime) OR pass logoUrl into
+                GenericSsoVariant when implemented.
+
+2) Google “G” mark (secondary)
+   Filename:    google-g-mark.svg
+   Used on:     dropbox variant — “Sign in with Google” button (currently text-only)
+   Size:        ~18×18 px in button, source ~48×48
+   Description: Full-color Google “G” for OAuth-style button beside Dropbox login.
+
+3) Microsoft four-square (secondary)
+   Filename:    microsoft-logo-squares.svg
+   Used on:     microsoft365 (hero + mobile header), mfa (Authenticator context)
+   Size:        24×24 (header), 48×48 (hero)
+   Description: Official-style four-color window grid.
+
+
+────────────────────────────────────────────────────────────────────────────────
+PER VARIANT (15 landing page types)
+────────────────────────────────────────────────────────────────────────────────
+
+── google_workspace ────────────────────────────────────────────────────────────
+Campaign templates: google-security-alert, google-drive-share
+Browser title:      Sign in - Google Accounts
+Display name:       Google / Google Account
+
+| Asset              | Suggested filename              | Size (display) | Description |
+|--------------------|---------------------------------|----------------|-------------|
+| Primary logo       | google-workspace-logo.svg       | 40×40          | Multicolor “G” used above “Sign in” card |
+| Favicon            | google-favicon.ico              | 16/32          | Google “G” favicon for tab realism |
+| Optional wordmark  | google-wordmark.svg             | ~80×24         | “Google” text (not used in UI today) |
+
+── microsoft365 ────────────────────────────────────────────────────────────────
+Campaign templates: microsoft-password-expiry
+Browser title:      Sign in to your account
+Display name:       Microsoft / Microsoft 365
+
+| Asset              | Suggested filename              | Size (display) | Description |
+|--------------------|---------------------------------|----------------|-------------|
+| Primary logo       | microsoft-logo-squares.svg      | 24×24          | Four-square mark in form header and left panel |
+| Optional hero art  | microsoft365-hero.webp          | ~400×300       | Abstract illustration for gray left panel (desktop) |
+| Favicon            | microsoft-favicon.ico           | 16/32          | Microsoft square favicon |
+
+── generic_sso ─────────────────────────────────────────────────────────────────
+Campaign templates: (fallback when landing type unknown)
+Browser title:      Sign in - Company SSO
+Display name:       {companyName} or “Your organization”
+
+| Asset              | Suggested filename              | Size (display) | Description |
+|--------------------|---------------------------------|----------------|-------------|
+| Primary logo       | sso-shield.svg OR org logo      | 36×36          | Blue shield with checkmark (default) OR uploaded org logo |
+| Favicon            | generic-sso-favicon.ico         | 16/32          | Shield or org favicon |
+
+── workday ─────────────────────────────────────────────────────────────────────
+Campaign templates: workday-pay-stub, workday-w2
+Browser title:      Sign In - Workday
+Display name:       Workday
+
+| Asset              | Suggested filename              | Size (display) | Description |
+|--------------------|---------------------------------|----------------|-------------|
+| Primary logo       | workday-wordmark.svg            | ~120×30        | Orange arc + “workday” wordmark (navy text) |
+| Favicon            | workday-favicon.ico             | 16/32          | Workday “W” or arc mark |
+
+── docusign ────────────────────────────────────────────────────────────────────
+Campaign templates: docusign-document-review
+Browser title:      DocuSign Login
+Display name:       DocuSign
+
+| Asset              | Suggested filename              | Size (display) | Description |
+|--------------------|---------------------------------|----------------|-------------|
+| Primary logo       | docusign-wordmark-white.svg     | ~120×24        | Purple header bar; white wordmark on #4A00E0 |
+| Favicon            | docusign-favicon.ico            | 16/32          | DocuSign tab icon |
+
+── helpdesk ────────────────────────────────────────────────────────────────────
+Campaign templates: helpdesk-ticket-resolved
+Browser title:      IT Helpdesk Portal
+Display name:       ServiceNow-style portal (“SN” monogram in UI)
+
+| Asset              | Suggested filename              | Size (display) | Description |
+|--------------------|---------------------------------|----------------|-------------|
+| Primary logo       | helpdesk-portal-logo.svg        | 32×32          | Green rounded square with “SN” (ServiceNow-like) OR your IT tool brand |
+| Optional ticket icon | ticket-status-icon.svg      | 16×16          | Small icon beside ticket INC0048217 card |
+| Favicon            | helpdesk-favicon.ico            | 16/32          | IT/helpdesk favicon |
+
+── vpn ─────────────────────────────────────────────────────────────────────────
+Campaign templates: vpn-certificate-expiry
+Browser title:      VPN Portal
+Display names:      Cisco Secure Client · GlobalProtect
+
+| Asset              | Suggested filename              | Size (display) | Description |
+|--------------------|---------------------------------|----------------|-------------|
+| Primary logo       | cisco-secure-client-logo.svg    | 32×32          | Dark tile with upload/lock icon OR Cisco globe |
+| Optional sub-brand | globalprotect-wordmark.svg      | —              | “GlobalProtect” text lockup in header |
+| Favicon            | vpn-portal-favicon.ico          | 16/32          | VPN/shield favicon |
+
+── teams ───────────────────────────────────────────────────────────────────────
+Campaign templates: teams-unread-messages
+Browser title:      Sign in - Microsoft Teams
+Display name:       Microsoft Teams
+
+| Asset              | Suggested filename              | Size (display) | Description |
+|--------------------|---------------------------------|----------------|-------------|
+| Primary logo       | microsoft-teams-logo.svg        | 36×36          | Purple rounded square Teams mark |
+| Favicon            | teams-favicon.ico               | 16/32          | Teams “T” favicon |
+
+── slack ───────────────────────────────────────────────────────────────────────
+Campaign templates: (variant exists; no default template mapped yet)
+Browser title:      Sign in - Slack
+Display name:       Slack
+
+| Asset              | Suggested filename              | Size (display) | Description |
+|--------------------|---------------------------------|----------------|-------------|
+| Primary logo       | slack-hash-logo.svg             | 48×48          | Four-color hashtag / knot mark |
+| Favicon            | slack-favicon.ico               | 16/32          | Slack favicon |
+
+── dropbox ─────────────────────────────────────────────────────────────────────
+Campaign templates: dropbox-storage-quota
+Browser title:      Sign in - Dropbox
+Display name:       Dropbox Business
+
+| Asset              | Suggested filename              | Size (display) | Description |
+|--------------------|---------------------------------|----------------|-------------|
+| Primary logo       | dropbox-logo.svg                | 32×32          | Blue open-box glyph |
+| Secondary logo     | google-g-mark.svg               | 18×18          | For “Sign in with Google” button |
+| Favicon            | dropbox-favicon.ico             | 16/32          | Dropbox box favicon |
+
+── mfa ─────────────────────────────────────────────────────────────────────────
+Campaign templates: mfa-enrollment-required
+Browser title:      Multi-factor authentication
+Display name:       Microsoft Authenticator (referenced in copy)
+
+| Asset              | Suggested filename              | Size (display) | Description |
+|--------------------|---------------------------------|----------------|-------------|
+| Primary logo       | microsoft-authenticator-icon.svg| 32×32          | Blue tile with lock/phone (MFA enrollment) |
+| Optional phone UI  | authenticator-push-mock.png     | ~280×120       | Optional screenshot-style “approve on phone” graphic |
+| Favicon            | mfa-favicon.ico                 | 16/32          | Lock/shield favicon |
+
+── benefits ────────────────────────────────────────────────────────────────────
+Campaign templates: benefits-open-enrollment
+Browser title:      Benefits Enrollment
+Display name:       Benefits portal (generic HR)
+
+| Asset              | Suggested filename              | Size (display) | Description |
+|--------------------|---------------------------------|----------------|-------------|
+| Primary logo       | benefits-portal-logo.svg        | 32×32          | Teal tile with bar-chart icon OR ADP/Fidelity-style mark |
+| Banner (text only) | —                               | full width     | Top bar: “Open enrollment ends Friday…” (no image today) |
+| Favicon            | benefits-favicon.ico            | 16/32          | HR/benefits favicon |
+
+── shipping ────────────────────────────────────────────────────────────────────
+Campaign templates: shipping-delivery-failed
+Browser title:      Delivery Verification
+Display name:       Generic carrier (UPS-style tracking format in UI)
+
+| Asset              | Suggested filename              | Size (display) | Description |
+|--------------------|---------------------------------|----------------|-------------|
+| Primary logo       | carrier-delivery-logo.svg       | 32×32          | Purple truck/delivery icon OR UPS/FedEx/DHL mark (pick one style) |
+| Optional package   | package-box-illustration.svg    | 64×64          | Small parcel graphic for tracking card |
+| Favicon            | shipping-favicon.ico            | 16/32          | Package/truck favicon |
+
+── linkedin ────────────────────────────────────────────────────────────────────
+Campaign templates: linkedin-profile-views
+Browser title:      Sign in - LinkedIn
+Display name:       LinkedIn
+
+| Asset              | Suggested filename              | Size (display) | Description |
+|--------------------|---------------------------------|----------------|-------------|
+| Primary logo       | linkedin-logo-white.svg         | 32×32          | White “in” on blue header bar (#0A66C2) |
+| Favicon            | linkedin-favicon.ico            | 16/32          | LinkedIn favicon |
+
+── software_license ────────────────────────────────────────────────────────────
+Campaign templates: software-license-renewal
+Browser title:      Software License Portal
+Display names:      Creative Cloud · Microsoft 365 (mentioned in warning copy)
+
+| Asset              | Suggested filename              | Size (display) | Description |
+|--------------------|---------------------------------|----------------|-------------|
+| Primary logo       | license-portal-logo.svg         | 32×32          | Dark tile “Cc” (Creative Cloud–like) OR SAM portal mark |
+| Optional secondary | adobe-cc-logo.svg               | 24×24          | Adobe Creative Cloud mark in warning banner |
+| Optional secondary | microsoft-365-badge.svg         | 24×24          | M365 badge beside renewal copy |
+| Favicon            | software-license-favicon.ico    | 16/32          | License/key favicon |
+
+
+────────────────────────────────────────────────────────────────────────────────
+QUICK REFERENCE — DISPLAY NAMES & BROWSER TITLES
+────────────────────────────────────────────────────────────────────────────────
+
+| landingPageType   | Browser tab title (documentTitle)     | Primary brand name(s) in UI        |
+|-------------------|---------------------------------------|------------------------------------|
+| google_workspace  | Sign in - Google Accounts             | Google Account                     |
+| microsoft365      | Sign in to your account               | Microsoft / Microsoft 365          |
+| generic_sso       | Sign in - Company SSO                 | {companyName}                      |
+| workday           | Sign In - Workday                     | Workday                            |
+| docusign          | DocuSign Login                        | DocuSign                           |
+| helpdesk          | IT Helpdesk Portal                    | Helpdesk Portal (SN monogram)      |
+| vpn               | VPN Portal                            | Cisco Secure Client / GlobalProtect|
+| teams             | Sign in - Microsoft Teams             | Microsoft Teams                    |
+| slack             | Sign in - Slack                       | Slack                              |
+| dropbox           | Sign in - Dropbox                     | Dropbox Business                   |
+| mfa               | Multi-factor authentication           | Microsoft Authenticator (copy)   |
+| benefits          | Benefits Enrollment                   | Benefits Sign In                   |
+| shipping          | Delivery Verification                 | Carrier / tracking portal          |
+| linkedin          | Sign in - LinkedIn                    | LinkedIn                           |
+| software_license  | Software License Portal               | Software License Portal / Adobe CC |
+
+
+────────────────────────────────────────────────────────────────────────────────
+CAMPAIGN TEMPLATE → LANDING PAGE MAP
+────────────────────────────────────────────────────────────────────────────────
+
+| Template ID (approx.)     | landingPageType   |
+|---------------------------|-------------------|
+| google-security-alert     | google_workspace  |
+| google-drive-share        | google_workspace  |
+| microsoft-password-expiry | microsoft365    |
+| docusign-document-review  | docusign          |
+| workday-pay-stub          | workday           |
+| workday-w2                | workday           |
+| helpdesk-ticket-resolved  | helpdesk          |
+| vpn-certificate-expiry    | vpn               |
+| teams-unread-messages     | teams             |
+| dropbox-storage-quota     | dropbox           |
+| mfa-enrollment-required   | mfa               |
+| benefits-open-enrollment  | benefits          |
+| shipping-delivery-failed  | shipping          |
+| linkedin-profile-views    | linkedin          |
+| software-license-renewal  | software_license  |
+
+slack and generic_sso: implemented in code; assign via landingPageType in campaign
+events or add templates as needed.
+
+
+────────────────────────────────────────────────────────────────────────────────
+MINIMUM FILE SET (if adding raster assets for all variants)
+────────────────────────────────────────────────────────────────────────────────
+
+Logos (15 primary + 3 secondary):
+  google-workspace-logo.svg
+  microsoft-logo-squares.svg
+  sso-shield.svg
+  workday-wordmark.svg
+  docusign-wordmark-white.svg
+  helpdesk-portal-logo.svg
+  cisco-secure-client-logo.svg
+  microsoft-teams-logo.svg
+  slack-hash-logo.svg
+  dropbox-logo.svg
+  microsoft-authenticator-icon.svg
+  benefits-portal-logo.svg
+  carrier-delivery-logo.svg
+  linkedin-logo-white.svg
+  license-portal-logo.svg
+  google-g-mark.svg          (Dropbox OAuth button)
+  adobe-cc-logo.svg          (optional, software_license)
+  microsoft-365-badge.svg    (optional, software_license)
+
+Favicons (15):
+  One .ico or 32×32 .png per landingPageType in public/simulations/favicons/
+
+Org-specific (per customer):
+  Uploaded company logo for generic_sso / branded SSO scenarios
+
+Total static assets (excluding org uploads): ~33 files (18 logos + 15 favicons)

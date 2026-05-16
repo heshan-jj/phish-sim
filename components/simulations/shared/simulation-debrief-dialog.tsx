@@ -20,6 +20,7 @@ export function SimulationDebriefDialog({
   subject,
   redFlags,
   clickRate,
+  coachingTip,
   accentClass = "text-[#2563eb]",
   buttonClass = "bg-[#2563eb] hover:bg-[#1d4ed8]",
 }: DebriefProps) {
@@ -58,7 +59,13 @@ export function SimulationDebriefDialog({
               </ul>
             </div>
 
-            <p className="text-sm text-black/80">
+            {coachingTip && (
+              <p className="text-sm text-black/80 mt-3 rounded-lg border border-black/10 bg-black/[0.02] p-3">
+                {coachingTip}
+              </p>
+            )}
+
+            <p className="text-sm text-black/80 mt-3">
               You&apos;re not alone — {clickRate}% of employees click on emails like this.
             </p>
             <a

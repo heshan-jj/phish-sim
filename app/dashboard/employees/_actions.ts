@@ -309,3 +309,23 @@ export async function deleteEmployee(
 
   return { ok: true };
 }
+
+export async function suggestCsvEmployeeFields(
+  rows: CsvEmployeeRow[],
+): Promise<Array<{ index: number; department: string; seniority: string }>> {
+  const org = await getOrgForUser();
+  if (!org) return [];
+
+  const { suggestEmployeeFieldMappings } = await import("@/lib/ai-extended");
+  try {
+    return await suggestEmployeeFieldMappings(
+      rows.map((r) => ({
+        name: r.name,
+        email: r.email,
+        role: r.role ?? undefined,
+      })),
+    );
+  } catch {
+    return [];
+  }
+}

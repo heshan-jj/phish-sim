@@ -109,7 +109,7 @@ export function calculateRiskScore(events: CampaignEvent[]): number {
     if (action === "credentials_submitted" && actions.has("credential_attempted")) {
       continue;
     }
-    if (actions.has(action)) score += delta ?? 0;
+    if (actions.has(action as CampaignEvent["action"])) score += delta ?? 0;
   }
 
   // Combo penalty: vishing call answered AND credentials submitted
@@ -267,14 +267,18 @@ export function getDepartmentScores(
 
     const campaignId = empEvents[0]?.campaignId;
 
-    const d = deptMap.get(dept) ?? {
-      scores: [],
-      compromisedCount: 0,
-      reportedCount: 0,
-      safeCount: 0,
-      templateCompromises: new Map(),
-      templateTotals: new Map(),
-    };
+    let d = deptMap.get(dept);
+    if (!d) {
+      d = {
+        scores: [],
+        compromisedCount: 0,
+        reportedCount: 0,
+        safeCount: 0,
+        templateCompromises: new Map(),
+        templateTotals: new Map(),
+      };
+      deptMap.set(dept, d);
+    }
 
     d.scores.push(score);
     if (isCompromised) {

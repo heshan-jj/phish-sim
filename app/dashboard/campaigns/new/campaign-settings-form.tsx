@@ -2,7 +2,12 @@
 
 import type { TargetingOptions } from "@/app/dashboard/campaigns/new/types";
 import type { CampaignDifficulty } from "@/lib/campaign-templates";
-import type { TargetMode } from "@/lib/campaign-settings";
+import {
+  AI_LAUNCH_RECIPIENT_WARN_THRESHOLD,
+  type CampaignChannel,
+  type ContentMode,
+  type TargetMode,
+} from "@/lib/campaign-settings";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -38,6 +43,10 @@ export interface CampaignSettingsFormValues {
   scheduleAt: string;
   staggerSends: boolean;
   sharedEmail: boolean;
+  contentMode: ContentMode;
+  channel: CampaignChannel;
+  locale: string;
+  aiLargeCampaignConfirmed: boolean;
 }
 
 interface CampaignSettingsFormProps {
@@ -49,6 +58,20 @@ interface CampaignSettingsFormProps {
   onContinue: () => void;
   continueDisabled: boolean;
   loading: boolean;
+}
+
+function countRecipients(
+  values: CampaignSettingsFormValues,
+  targeting: TargetingOptions | null,
+): number {
+  if (!targeting) return 0;
+  if (values.targetMode === "all") return targeting.employees.length;
+  if (values.targetMode === "departments") {
+    return targeting.employees.filter((e) =>
+      e.department ? values.departments.includes(e.department) : false,
+    ).length;
+  }
+  return values.employeeIds.length;
 }
 
 function EmployeeMultiSelect({
@@ -141,6 +164,11 @@ export function CampaignSettingsForm({
   continueDisabled,
   loading,
 }: CampaignSettingsFormProps) {
+  const recipientCount = countRecipients(values, targeting);
+  const showAiConfirm =
+    values.contentMode !== "static" &&
+    recipientCount > AI_LAUNCH_RECIPIENT_WARN_THRESHOLD;
+
   const toggleDepartment = (dept: string, checked: boolean) => {
     if (checked) {
       onChange({ departments: [...values.departments, dept] });
@@ -313,6 +341,67 @@ export function CampaignSettingsForm({
           />
         )}
       </div>
+
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="channel">Simulation channel</Label>
+        <Select
+          id="channel"
+          value={values.channel}
+          onChange={(e) =>
+            onChange({ channel: e.target.value as CampaignChannel })
+          }
+        >
+          <option value="email">Email phishing</option>
+          <option value="vishing">Vishing (voice)</option>
+          <option value="smishing">Smishing (SMS via email delivery)</option>
+        </Select>
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="content-mode">Email content</Label>
+        <Select
+          id="content-mode"
+          value={values.contentMode}
+          onChange={(e) =>
+            onChange({ contentMode: e.target.value as ContentMode })
+          }
+          disabled={values.channel !== "email"}
+        >
+          <option value="static">Static template</option>
+          <option value="ai">AI-generated (MiniMax)</option>
+          <option value="hybrid">Hybrid (template brief + AI)</option>
+        </Select>
+        <p className="text-[12px]" style={{ color: "var(--ds-steel)" }}>
+          AI modes use company context from onboarding. Requires MINIMAX_API_KEY.
+        </p>
+      </div>
+
+      {values.contentMode !== "static" && values.channel === "email" && (
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="locale">Locale (optional)</Label>
+          <Input
+            id="locale"
+            placeholder="en, es, fr…"
+            value={values.locale}
+            onChange={(e) => onChange({ locale: e.target.value })}
+          />
+        </div>
+      )}
+
+      {showAiConfirm && (
+        <label className="flex items-start gap-2 cursor-pointer rounded-[8px] border p-4" style={{ borderColor: "var(--ds-hairline)" }}>
+          <Checkbox
+            checked={values.aiLargeCampaignConfirmed}
+            onCheckedChange={(checked) =>
+              onChange({ aiLargeCampaignConfirmed: checked === true })
+            }
+          />
+          <span className="text-[13px]" style={{ color: "var(--ds-slate)" }}>
+            I confirm sending AI-generated content to {recipientCount} recipients
+            (over {AI_LAUNCH_RECIPIENT_WARN_THRESHOLD}).
+          </span>
+        </label>
+      )}
 
       <div
         className="flex items-center justify-between gap-4 rounded-[8px] border p-4"

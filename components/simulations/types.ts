@@ -25,6 +25,7 @@ export interface DebriefProps {
   subject: string;
   redFlags: string[];
   clickRate: number;
+  coachingTip?: string | null;
   accentClass?: string;
   buttonClass?: string;
 }

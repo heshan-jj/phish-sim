@@ -66,6 +66,7 @@ export function InboxClient({
   const [safeHtml, setSafeHtml] = useState("");
   const [reporting, setReporting] = useState(false);
   const [showCongrats, setShowCongrats] = useState(false);
+  const [reportFeedback, setReportFeedback] = useState<string | null>(null);
 
   const timestamp = useMemo(() => formatTimestamp(message.timestamp), [message.timestamp]);
   const avatarInitials = useMemo(() => {
@@ -97,6 +98,14 @@ export function InboxClient({
       );
       if (response.ok) {
         setShowCongrats(true);
+        fetch("/api/training/coaching", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token, action: "reported" }),
+        })
+          .then((r) => r.json())
+          .then((d: { message?: string }) => setReportFeedback(d.message ?? null))
+          .catch(() => setReportFeedback(null));
       }
     } finally {
       setReporting(false);
@@ -228,8 +237,8 @@ export function InboxClient({
           <DialogHeader>
             <DialogTitle>Great catch!</DialogTitle>
             <DialogDescription>
-              You successfully reported the simulated phishing email. This is exactly the
-              right response for suspicious messages.
+              {reportFeedback ??
+                "You successfully reported the simulated phishing email. This is exactly the right response for suspicious messages."}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

@@ -5,6 +5,8 @@ import {
   type CampaignDifficulty,
   type CampaignTemplate,
 } from "@/lib/campaign-templates";
+import type { CampaignChannel } from "@/lib/campaign-settings";
+import { filterTemplatesByChannel } from "@/lib/campaign-channel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -60,13 +62,20 @@ function tagStyle(tag: string) {
 
 interface TemplateGridProps {
   selectedId: string | null;
+  channel?: CampaignChannel;
   onSelect: (template: CampaignTemplate) => void;
 }
 
-export function TemplateGrid({ selectedId, onSelect }: TemplateGridProps) {
+export function TemplateGrid({
+  selectedId,
+  channel = "email",
+  onSelect,
+}: TemplateGridProps) {
+  const templates = filterTemplatesByChannel(CAMPAIGN_TEMPLATES, channel);
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {CAMPAIGN_TEMPLATES.map((template) => {
+      {templates.map((template) => {
         const selected = selectedId === template.id;
         return (
           <Card

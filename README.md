@@ -56,6 +56,18 @@ DATABASE_URL=postgresql://postgres.<ref>:<password>@aws-0-<region>.pooler.supaba
 
 > The `DATABASE_URL` is used by Drizzle ORM for server-side writes (server actions). It bypasses Row Level Security, so keep it server-side only — never prefix it with `NEXT_PUBLIC_`.
 
+### MiniMax AI (optional)
+
+For AI-generated campaign content (`contentMode: ai` or `hybrid`), set:
+
+```env
+MINIMAX_API_KEY=<your-key>
+MINIMAX_MODEL=MiniMax-M2.7
+AI_LAUNCH_CONCURRENCY=2
+```
+
+See `.env.local.example` for all AI-related variables. Campaigns with `contentMode: static` (default) do not require MiniMax.
+
 ---
 
 ## 3. Supabase setup

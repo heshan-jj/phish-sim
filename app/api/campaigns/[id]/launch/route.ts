@@ -1,10 +1,20 @@
-import type { CampaignSettings } from "@/lib/campaign-settings";
+import {
+  normalizeCampaignSettings,
+  type CampaignSettings,
+} from "@/lib/campaign-settings";
 import {
   getTemplateById,
   personalizeText,
   pickTemplateVariation,
-  renderCampaignEmail,
 } from "@/lib/campaign-templates";
+import {
+  resolvePhishingEmailContent,
+  resolveSmishingContent,
+  resolveVoiceScript,
+  smishingToEmailHtml,
+} from "@/lib/ai-launch";
+import { parseOrgContext } from "@/lib/org-context";
+import { assertMinimaxConfigured } from "@/lib/ai";
 import { db } from "@/lib/db";
 import { listEmployeesByOrg } from "@/lib/db/queries/employees";
 import { campaignEvents, campaigns, organizations } from "@/lib/db/schema";
@@ -196,7 +206,11 @@ export async function POST(
   }
 
   const [org] = await db
-    .select({ id: organizations.id, name: organizations.name })
+    .select({
+      id: organizations.id,
+      name: organizations.name,
+      context: organizations.context,
+    })
     .from(organizations)
     .where(eq(organizations.userId, user.id))
     .limit(1);
@@ -215,7 +229,29 @@ export async function POST(
     return NextResponse.json({ error: "Campaign not found" }, { status: 404 });
   }
 
-  const settings = (campaign.settings as CampaignSettings | null) ?? null;
+  const settings = normalizeCampaignSettings(
+    campaign.settings as CampaignSettings | null,
+  );
+  const orgContext = parseOrgContext(org.context);
+  const contentMode = settings.contentMode ?? "static";
+  const channel = settings.channel ?? "email";
+  const campaignDifficulty = campaign.difficulty;
+
+  if (contentMode !== "static") {
+    try {
+      assertMinimaxConfigured();
+    } catch (err) {
+      return NextResponse.json(
+        {
+          error:
+            err instanceof Error
+              ? err.message
+              : "MiniMax is required for AI content mode",
+        },
+        { status: 500 },
+      );
+    }
+  }
   const allEmployees = await listEmployeesByOrg(org.id);
 
   let recipients = allEmployees;
@@ -270,9 +306,9 @@ export async function POST(
   //   the template's anti-detection delay window.
   // - sendImmediately=false + stored schedule -> honour the schedule,
   //   optionally spreading sends within the campaign window.
-  const sendImmediately = settings?.sendImmediately ?? true;
-  const staggerSends = settings?.staggerSends ?? false;
-  const sharedEmail = settings?.sharedEmail ?? false;
+  const sendImmediately = settings.sendImmediately;
+  const staggerSends = settings.staggerSends;
+  const sharedEmail = settings.sharedEmail;
   const baseSendDate =
     !sendImmediately && campaign.schedule ? campaign.schedule : null;
   let nextImmediateScheduledAt = new Date();
@@ -286,7 +322,9 @@ export async function POST(
   console.info("[campaign-launch] starting", {
     campaignId: campaign.id,
     orgId: org.id,
-    targetMode: settings?.targetMode ?? "all",
+    targetMode: settings.targetMode,
+    contentMode,
+    channel,
     recipientCount: recipients.length,
     batchSize: BATCH_SIZE,
     sendImmediately,
@@ -317,10 +355,25 @@ export async function POST(
           });
 
           const token = crypto.randomUUID();
-          const actionUrl = new URL(
+          const loginUrl = new URL(
             `/login/${campaign.id}/${token}`,
             origin,
           ).toString();
+          const callUrl = new URL(
+            `/call/${campaign.id}/${token}`,
+            origin,
+          ).toString();
+          const smsUrl = new URL(
+            `/sms/${campaign.id}/${token}`,
+            origin,
+          ).toString();
+          const _actionUrl =
+            channel === "vishing"
+              ? callUrl
+              : channel === "smishing"
+                ? smsUrl
+                : loginUrl;
+          void _actionUrl;
 
           const variation = sharedEmail ? sharedVariation! : pickTemplateVariation(template);
           const placeholders = sharedEmail
@@ -345,20 +398,98 @@ export async function POST(
                   variation,
                 };
               })();
-          const subject = personalizeText(template.subject, placeholders);
           const preheader = personalizeText(template.preheader, placeholders);
-          const emailBody = renderCampaignEmail({
-            template,
-            placeholders,
-            actionUrl,
-            variation,
-          });
-          const phishingEmail = {
-            subject,
-            body: emailBody,
-            senderName: template.senderName,
-            senderEmail: template.senderEmail,
+          const employeeForGen = {
+            name: employee.name,
+            role: employee.role,
+            department: employee.department,
+            seniority: employee.seniority,
           };
+
+          let phishingEmail: {
+            subject: string;
+            body: string;
+            senderName: string;
+            senderEmail: string;
+          };
+          let redFlags = template.redFlags;
+          let aiFallback = false;
+          let resolvedContentMode = contentMode;
+          let voiceScriptMeta: Record<string, unknown> | undefined;
+          let smishingMeta: Record<string, unknown> | undefined;
+
+          if (channel === "vishing") {
+            const { script, aiFallback: vf } = await resolveVoiceScript({
+              template,
+              employee: employeeForGen,
+              orgContext,
+              campaignDifficulty,
+              locale: settings.locale,
+            });
+            aiFallback = vf;
+            voiceScriptMeta = {
+              script: script.script,
+              callerName: script.callerName,
+              callerRole: script.callerRole,
+            };
+            phishingEmail = {
+              subject: personalizeText(
+                `[Training] Incoming call simulation — ${template.title}`,
+                placeholders,
+              ),
+              body: `<p>You have a simulated vishing (voice phishing) exercise.</p><p><a href="${callUrl}">Start call simulation</a></p>`,
+              senderName: script.callerName,
+              senderEmail: template.senderEmail,
+            };
+          } else if (channel === "smishing") {
+            const smish = await resolveSmishingContent({
+              template,
+              employee: employeeForGen,
+              orgContext,
+              campaignDifficulty,
+              actionUrl: loginUrl,
+              locale: settings.locale,
+            });
+            aiFallback = smish.aiFallback;
+            smishingMeta = {
+              message: smish.message,
+              senderLabel: smish.senderLabel,
+            };
+            phishingEmail = {
+              subject: personalizeText(
+                `[Training] SMS simulation — ${template.title}`,
+                placeholders,
+              ),
+              body: smishingToEmailHtml(
+                smish.message,
+                smish.senderLabel,
+                smsUrl,
+              ),
+              senderName: smish.senderLabel,
+              senderEmail: template.senderEmail,
+            };
+          } else {
+            const resolved = await resolvePhishingEmailContent({
+              contentMode,
+              template,
+              employee: employeeForGen,
+              orgContext,
+              campaignDifficulty,
+              placeholders,
+              actionUrl: loginUrl,
+              variation,
+              locale: settings.locale,
+            });
+            phishingEmail = {
+              subject: resolved.subject,
+              body: resolved.body,
+              senderName: resolved.senderName,
+              senderEmail: resolved.senderEmail,
+            };
+            redFlags = resolved.redFlags;
+            aiFallback = resolved.aiFallback;
+            resolvedContentMode = resolved.contentMode;
+          }
 
           let scheduledAt: Date | null = null;
           if (sendImmediately && staggerSends) {
@@ -415,8 +546,14 @@ export async function POST(
                 landingPageType: template.landingPageType,
                 urgencyLevel: template.urgencyLevel,
                 buttonText: template.buttonText,
-                redFlags: template.redFlags,
+                redFlags,
                 variation,
+                contentMode: resolvedContentMode,
+                channel,
+                aiFallback,
+                voiceScript: voiceScriptMeta,
+                smishing: smishingMeta,
+                coachingTip: null as string | null,
               },
             },
           });

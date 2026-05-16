@@ -6,6 +6,11 @@ import { DepartmentChart } from "./department-chart";
 import { TimelineChart } from "./timeline-chart";
 import { EmployeeTable } from "./employee-table";
 import { RealtimeUpdater } from "./realtime-updater";
+import { AiSummaryCard } from "./ai-summary-card";
+import { db } from "@/lib/db";
+import { campaigns } from "@/lib/db/schema";
+import type { CampaignSettings } from "@/lib/campaign-settings";
+import { eq } from "drizzle-orm";
 
 interface Props {
   campaignId: string;
@@ -152,10 +157,22 @@ export async function AnalyticsContent({ campaignId }: Props) {
     timeline,
   } = data;
 
+  const [campaignRow] = await db
+    .select({ settings: campaigns.settings })
+    .from(campaigns)
+    .where(eq(campaigns.id, campaignId))
+    .limit(1);
+  const campaignSettings = campaignRow?.settings as CampaignSettings | null;
+
   return (
     <div className="flex flex-col gap-8">
       {/* Realtime subscription (client) */}
       <RealtimeUpdater campaignId={campaignId} />
+
+      <AiSummaryCard
+        initialSummary={campaignSettings?.lastAiSummary ?? null}
+        generatedAt={campaignSettings?.lastAiSummaryAt ?? null}
+      />
 
       {/* Page header */}
       <div>

@@ -5,6 +5,7 @@ import { SimulationDebriefDialog } from "@/components/simulations/shared/simulat
 import { useSimulationTracking } from "@/components/simulations/shared/use-simulation-tracking";
 import { VARIANT_META } from "@/components/simulations/variant-meta";
 import type { LandingPageType } from "@/lib/campaign-templates";
+import { useEffect, useState } from "react";
 
 interface LoginSimulationClientProps {
   token: string;
@@ -31,6 +32,19 @@ export function LoginSimulationClient({
 }: LoginSimulationClientProps) {
   const { submitting, showDebrief, setShowDebrief, submitCredentials } =
     useSimulationTracking({ token, campaignId, variant });
+  const [coachingTip, setCoachingTip] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!showDebrief) return;
+    fetch("/api/training/coaching", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token, action: "compromised" }),
+    })
+      .then((r) => r.json())
+      .then((d: { message?: string }) => setCoachingTip(d.message ?? null))
+      .catch(() => setCoachingTip(null));
+  }, [showDebrief, token]);
 
   const VariantComponent = SIMULATION_VARIANTS[variant];
   const meta = VARIANT_META[variant];
@@ -58,6 +72,7 @@ export function LoginSimulationClient({
         subject={subject}
         redFlags={redFlags}
         clickRate={clickRate}
+        coachingTip={coachingTip}
         accentClass={meta.accentClass}
         buttonClass={meta.buttonClass}
       />

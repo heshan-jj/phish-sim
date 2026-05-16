@@ -5,6 +5,7 @@ import {
   markOnboardingComplete,
   saveContext,
   saveStep1,
+  suggestOrgContextWithAi,
   type OrgContext,
 } from "@/app/onboarding/_actions";
 import { Button } from "@/components/ui/button";
@@ -111,6 +112,30 @@ export default function OnboardingPage() {
   const [terminology, setTerminology] = useState("");
   const [events, setEvents] = useState("");
   const [orgStructure, setOrgStructure] = useState("");
+  const [suggestingContext, setSuggestingContext] = useState(false);
+
+  async function handleSuggestContext() {
+    if (!orgName.trim()) {
+      setError("Enter a company name on step 1 first.");
+      return;
+    }
+    setSuggestingContext(true);
+    setError(null);
+    try {
+      const suggested = await suggestOrgContextWithAi(
+        orgName.trim(),
+        industry || "Other",
+      );
+      setVendors(suggested.vendors);
+      setTerminology(suggested.terminology);
+      setEvents(suggested.events);
+      setOrgStructure(suggested.orgStructure);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "AI suggestion failed");
+    } finally {
+      setSuggestingContext(false);
+    }
+  }
 
   function applyOrg(org: NonNullable<Awaited<ReturnType<typeof ensureOrgForUser>>>) {
     setOrgId(org.id);
@@ -419,6 +444,24 @@ export default function OnboardingPage() {
               Help PhishSim craft realistic, context-aware simulations for your
               team. All fields are optional.
             </p>
+
+            <Button
+              type="button"
+              variant="dsOutline"
+              size="sm"
+              className="self-start"
+              disabled={suggestingContext}
+              onClick={() => void handleSuggestContext()}
+            >
+              {suggestingContext ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Suggesting…
+                </>
+              ) : (
+                "Suggest with AI"
+              )}
+            </Button>
 
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="vendors">Main vendors & tools used</Label>

@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/table";
 import { ArrowRight, Megaphone, Plus, Users } from "lucide-react";
 import Link from "next/link";
+import { TemplateRecommendationsCard } from "@/components/dashboard/template-recommendations-card";
 
 function formatDate(date: Date | null) {
   if (!date) return "—";
@@ -57,6 +58,8 @@ export async function DashboardOverviewContent() {
       <p className="text-[14px] leading-[1.50] -mt-6 mb-2" style={{ color: "var(--ds-steel)" }}>
         Security awareness at a glance for {org.name}.
       </p>
+
+      <TemplateRecommendationsCard />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card className="p-6">

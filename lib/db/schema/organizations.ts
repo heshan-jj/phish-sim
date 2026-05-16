@@ -10,6 +10,10 @@ export const organizations = pgTable("organizations", {
   onboardingCompletedAt: timestamp("onboarding_completed_at", {
     withTimezone: true,
   }),
+  templateRecommendations: jsonb("template_recommendations"),
+  templateRecommendationsAt: timestamp("template_recommendations_at", {
+    withTimezone: true,
+  }),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
