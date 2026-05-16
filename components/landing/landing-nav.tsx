@@ -114,7 +114,7 @@ export function LandingNav({ isAuthenticated }: LandingAuthProps) {
             <motion.div
               className={cn(
                 "relative flex items-center justify-between px-4",
-                scrolled ? "h-14 sm:px-2" : "h-16 sm:px-6 lg:px-8",
+                scrolled ? "h-16 sm:px-2" : "h-20 sm:px-6 lg:px-8",
               )}
               variants={prefersReduced ? undefined : navStagger}
               initial="initial"

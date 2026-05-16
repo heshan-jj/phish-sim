@@ -181,7 +181,7 @@ export function CampaignsClient({ campaigns: initial }: Props) {
                     <>
                       <Link
                         href={`/dashboard/campaigns/${campaign.id}/analytics`}
-                        className="inline-flex items-center gap-1.5 text-[12px] font-[500] hover:underline"
+                        className="ds-interactive-link inline-flex items-center gap-1.5 text-[12px] font-[500]"
                         style={{ color: "var(--ds-link)" }}
                       >
                         <BarChart2 className="size-3.5" />

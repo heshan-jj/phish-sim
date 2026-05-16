@@ -83,7 +83,7 @@ function FAQItem({
           animate={{ rotate: isOpen ? 180 : 0 }}
           transition={prefersReduced ? { duration: 0 } : springSnappy}
           className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] transition-colors ${
-            isOpen ? "bg-[#5645d4] text-white" : "bg-[#f6f5f4] text-[#787671]"
+            isOpen ? "bg-[#5645d4] text-white" : "bg-[#f6f5f4] text-[#787671] hover:bg-[#ede9e4]"
           }`}
         >
           <ChevronDown className="h-4 w-4" aria-hidden />

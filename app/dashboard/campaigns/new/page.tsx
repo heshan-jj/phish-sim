@@ -196,15 +196,11 @@ export default function NewCampaignPage() {
             )}
             <Button
               type="button"
+              variant="ds"
+              size="app"
               onClick={() => setStep(2)}
               disabled={!templateId}
-              className="w-full sm:w-auto sm:ml-auto h-11 rounded-[8px] px-8"
-              style={{
-                backgroundColor: !templateId
-                  ? "var(--ds-hairline)"
-                  : "var(--ds-primary)",
-                color: !templateId ? "var(--ds-muted)" : "#ffffff",
-              }}
+              className="w-full sm:w-auto sm:ml-auto px-8"
             >
               Continue
             </Button>

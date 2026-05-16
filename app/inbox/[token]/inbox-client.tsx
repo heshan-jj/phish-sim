@@ -233,7 +233,12 @@ export function InboxClient({
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button type="button" onClick={() => setShowCongrats(false)}>
+            <Button
+              type="button"
+              variant="ds"
+              size="app"
+              onClick={() => setShowCongrats(false)}
+            >
               Close
             </Button>
           </DialogFooter>

@@ -171,25 +171,22 @@ export function CampaignReview({
       )}
 
       <div className="flex flex-col sm:flex-row gap-3">
-        <button
-          type="button"
-          onClick={onBack}
-          disabled={loading}
-          className="h-11 px-4 rounded-[8px] text-[14px] font-[500] border transition-colors disabled:opacity-50"
-          style={{
-            borderColor: "var(--ds-hairline-strong)",
-            color: "var(--ds-ink)",
-            backgroundColor: "transparent",
-          }}
-        >
-          Back
-        </button>
         <Button
           type="button"
-          variant="outline"
+          variant="dsOutline"
+          size="app"
+          onClick={onBack}
+          disabled={loading}
+        >
+          Back
+        </Button>
+        <Button
+          type="button"
+          variant="dsOutline"
+          size="app"
           onClick={onSaveDraft}
           disabled={loading}
-          className="flex-1 h-11 rounded-[8px]"
+          className="flex-1"
         >
           {loading ? (
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -199,13 +196,11 @@ export function CampaignReview({
         </Button>
         <Button
           type="button"
+          variant="ds"
+          size="app"
           onClick={onLaunch}
           disabled={loading}
-          className="flex-1 h-11 rounded-[8px] text-[14px] font-[500]"
-          style={{
-            backgroundColor: loading ? "var(--ds-hairline)" : "var(--ds-primary)",
-            color: loading ? "var(--ds-muted)" : "#ffffff",
-          }}
+          className="flex-1"
         >
           {loading ? (
             <>

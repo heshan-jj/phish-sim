@@ -25,16 +25,14 @@ export async function CampaignsContent() {
         >
           Create a campaign from a template to start training your team.
         </p>
-        <Link href="/dashboard/campaigns/new">
-          <Button
-            type="button"
-            className="h-11 rounded-[8px] px-6"
-            style={{ backgroundColor: "var(--ds-primary)", color: "#ffffff" }}
-          >
-            <Plus className="size-4" />
-            Create campaign
-          </Button>
-        </Link>
+        <Button
+          variant="ds"
+          size="app"
+          render={<Link href="/dashboard/campaigns/new" />}
+        >
+          <Plus className="size-4" />
+          Create campaign
+        </Button>
       </div>
     );
   }

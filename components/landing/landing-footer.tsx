@@ -41,7 +41,7 @@ function FooterAccordionGroup({
       <button
         type="button"
         onClick={onToggle}
-        className="flex w-full min-h-[44px] items-center justify-between py-3 text-left"
+        className="flex w-full min-h-[44px] items-center justify-between rounded-[8px] py-3 text-left transition-colors hover:bg-[var(--ds-surface)]"
         aria-expanded={open}
       >
         <span className="text-xs font-semibold uppercase tracking-wide text-[var(--ds-steel,#a4a097)]">
@@ -81,7 +81,7 @@ export function LandingFooter() {
         <div className="flex flex-col gap-10 md:flex-row md:justify-between md:gap-12">
           <div className="shrink-0 md:max-w-[340px]">
             <Link href="/" className="inline-block mb-4">
-              <BrandLogo variant="full" className="h-20 w-auto max-w-[320px]" />
+              <BrandLogo variant="full" className="h-28 w-auto max-w-[420px]" />
             </Link>
           </div>
 

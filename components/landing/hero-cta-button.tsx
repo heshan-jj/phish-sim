@@ -30,7 +30,11 @@ export function HeroCtaButton({
       href={href}
       id={id}
       onClick={onClick}
-      className={cn("inline-block w-full sm:w-auto group/hero-cta", className)}
+      className={cn(
+        "inline-block w-full sm:w-auto group/hero-cta",
+        !isPrimary && "group/hero-cta-secondary",
+        className,
+      )}
     >
       <motion.div style={{ perspective: 900 }}>
         <motion.div
@@ -76,7 +80,7 @@ export function HeroCtaButton({
               },
               hover: {
                 boxShadow: isPrimary
-                  ? "0 1px 0 rgba(255,255,255,0.14) inset, 0 12px 40px color-mix(in srgb, var(--ds-primary) 50%, transparent), 0 0 0 1px color-mix(in srgb, var(--ds-brand-purple) 40%, transparent)"
+                  ? "0 1px 0 rgba(255,255,255,0.14) inset, 0 12px 40px color-mix(in srgb, var(--ds-primary) 50%, transparent), 0 0 0 1px color-mix(in srgb, var(--ds-primary) 45%, transparent)"
                   : "0 1px 0 rgba(255,255,255,0.12) inset, 0 10px 32px color-mix(in srgb, var(--ds-brand-teal) 35%, transparent), 0 0 0 1px color-mix(in srgb, var(--ds-brand-teal) 30%, var(--ds-glass-border))",
               },
               tap: {
@@ -123,7 +127,7 @@ export function HeroCtaButton({
                 }}
                 transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
                 style={{
-                  backgroundColor: "var(--ds-primary)",
+                  backgroundColor: "var(--ds-brand-teal)",
                 }}
                 aria-hidden
               />

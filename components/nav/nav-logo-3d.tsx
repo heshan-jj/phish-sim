@@ -66,7 +66,7 @@ export function NavLogo3D({
             variant="lockup"
             priority={isMarketing}
             className={cn(
-              "h-11 w-auto max-w-[260px] sm:h-12 sm:max-w-[290px]",
+              "h-14 w-auto max-w-[300px] sm:h-16 sm:max-w-[340px]",
               heroOnDark && "brightness-0 invert",
             )}
           />

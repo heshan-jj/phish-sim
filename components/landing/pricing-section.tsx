@@ -120,9 +120,9 @@ function PlanCard({
 
       <Link
         href={isAuthenticated ? "/dashboard" : "/signup"}
-        className={`mt-6 inline-flex min-h-[44px] w-full items-center justify-center rounded-[10px] px-4 py-2 text-sm font-medium transition-colors ${
+        className={`landing-pressable mt-6 inline-flex min-h-[44px] w-full items-center justify-center rounded-[10px] px-4 py-2 text-sm font-medium ${
           plan.popular
-            ? "bg-white text-[#0f1d40] hover:bg-[#f4f6ff]"
+            ? "bg-white text-[#0f1d40] hover:bg-[#f4f6ff] hover:brightness-[0.98]"
             : "bg-[#5645d4] text-white hover:bg-[#4534b3]"
         }`}
       >
@@ -201,7 +201,9 @@ function PricingCarousel({
               card?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
             }}
             className={`h-2 rounded-full transition-all ${
-              activeIndex === i ? "w-6 bg-[#5645d4]" : "w-2 bg-[#d7d4cf]"
+              activeIndex === i
+                ? "w-6 bg-[#5645d4]"
+                : "w-2 bg-[#d7d4cf] hover:scale-125 hover:bg-[#bbb8b1] motion-reduce:hover:scale-100"
             }`}
           />
         ))}
@@ -244,8 +246,10 @@ export function PricingSection({ isAuthenticated }: LandingAuthProps) {
             <button
               type="button"
               onClick={() => setYearly(false)}
-              className={`flex-1 rounded-[8px] px-4 py-2.5 text-sm font-medium transition-colors min-h-[44px] ${
-                !yearly ? "bg-[#5645d4] text-white" : "text-[#5d5b54] hover:bg-[#f6f5f4]"
+              className={`flex-1 rounded-[8px] px-4 py-2.5 text-sm font-medium min-h-[44px] transition-[background-color,box-shadow,filter] ${
+                !yearly
+                  ? "bg-[#5645d4] text-white hover:brightness-110"
+                  : "landing-pressable text-[#5d5b54] hover:bg-[#f6f5f4] hover:shadow-sm"
               }`}
             >
               Monthly
@@ -253,8 +257,10 @@ export function PricingSection({ isAuthenticated }: LandingAuthProps) {
             <button
               type="button"
               onClick={() => setYearly(true)}
-              className={`flex-1 rounded-[8px] px-4 py-2.5 text-sm font-medium transition-colors min-h-[44px] ${
-                yearly ? "bg-[#5645d4] text-white" : "text-[#5d5b54] hover:bg-[#f6f5f4]"
+              className={`flex-1 rounded-[8px] px-4 py-2.5 text-sm font-medium min-h-[44px] transition-[background-color,box-shadow,filter] ${
+                yearly
+                  ? "bg-[#5645d4] text-white hover:brightness-110"
+                  : "landing-pressable text-[#5d5b54] hover:bg-[#f6f5f4] hover:shadow-sm"
               }`}
             >
               Yearly <span className="text-[11px] opacity-80">(save 18%)</span>

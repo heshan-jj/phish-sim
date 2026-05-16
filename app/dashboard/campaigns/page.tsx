@@ -20,19 +20,15 @@ export default function CampaignsPage() {
             View and manage phishing simulation campaigns.
           </p>
         </div>
-        <Link href="/dashboard/campaigns/new" className="shrink-0">
-          <Button
-            type="button"
-            className="h-11 rounded-[8px] px-4"
-            style={{
-              backgroundColor: "var(--ds-primary)",
-              color: "#ffffff",
-            }}
-          >
-            <Plus className="size-4" />
-            New campaign
-          </Button>
-        </Link>
+        <Button
+          variant="ds"
+          size="app"
+          className="shrink-0"
+          render={<Link href="/dashboard/campaigns/new" />}
+        >
+          <Plus className="size-4" />
+          New campaign
+        </Button>
       </div>
 
       <div

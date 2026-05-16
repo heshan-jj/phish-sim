@@ -94,12 +94,7 @@ export function DashboardNav({ orgName }: { orgName: string }) {
               : { y: -2, boxShadow: "0 4px 12px rgba(10, 21, 48, 0.08)" }
           }
           whileTap={prefersReduced || signingOut ? undefined : { scale: 0.98 }}
-          className="group inline-flex shrink-0 items-center gap-1.5 rounded-[8px] border px-3 py-2 text-[13px] font-[500] transition-colors disabled:opacity-50"
-          style={{
-            borderColor: "var(--ds-hairline-strong)",
-            color: "var(--ds-charcoal)",
-            backgroundColor: "var(--ds-canvas)",
-          }}
+          className="group inline-flex shrink-0 items-center gap-1.5 rounded-[8px] border border-ds-hairline-strong bg-ds-canvas px-3 py-2 text-[13px] font-[500] text-ds-charcoal transition-colors hover:bg-ds-surface active:bg-ds-surface disabled:opacity-50"
         >
           <LogOut
             className={`size-4 transition-transform ${!prefersReduced && !signingOut ? "group-hover:translate-x-0.5" : ""}`}

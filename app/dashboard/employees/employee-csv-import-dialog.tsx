@@ -184,14 +184,7 @@ export function EmployeeCsvImportDialog() {
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger
         render={
-          <Button
-            type="button"
-            className="h-11 rounded-[8px] px-4"
-            style={{
-              backgroundColor: "var(--ds-primary)",
-              color: "#ffffff",
-            }}
-          />
+          <Button type="button" variant="ds" size="app" />
         }
       >
         <Upload className="size-4" />
@@ -289,8 +282,8 @@ export function EmployeeCsvImportDialog() {
         <DialogFooter className="sm:justify-end gap-2">
           <Button
             type="button"
-            variant="outline"
-            className="h-11 rounded-[8px]"
+            variant="dsOutline"
+            size="app"
             onClick={() => handleOpenChange(false)}
             disabled={importing}
           >
@@ -298,13 +291,8 @@ export function EmployeeCsvImportDialog() {
           </Button>
           <Button
             type="button"
-            className="h-11 rounded-[8px]"
-            style={{
-              backgroundColor: canConfirm
-                ? "var(--ds-primary)"
-                : "var(--ds-hairline)",
-              color: canConfirm ? "#ffffff" : "var(--ds-muted)",
-            }}
+            variant="ds"
+            size="app"
             disabled={!canConfirm}
             onClick={() => void handleConfirm()}
           >

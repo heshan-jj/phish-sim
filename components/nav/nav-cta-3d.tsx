@@ -26,17 +26,24 @@ export function NavCta3D({
 
   if (variant === "glass") {
     return (
-      <Link
-        href={href}
-        onClick={onClick}
-        className={cn(
-          "inline-flex items-center justify-center font-medium text-white rounded-[8px] landing-glass-primary transition-all duration-200 hover:brightness-110",
-          compact ? "px-3 py-1.5 text-sm" : "px-4 py-2 text-sm",
-          className,
-        )}
+      <motion.div
+        whileHover={prefersReduced ? undefined : { y: -2 }}
+        whileTap={prefersReduced ? undefined : { y: 0 }}
+        transition={springSnappy}
+        className="inline-block"
       >
-        {children}
-      </Link>
+        <Link
+          href={href}
+          onClick={onClick}
+          className={cn(
+            "inline-flex items-center justify-center font-medium text-white rounded-[8px] landing-glass-primary transition-all duration-200 hover:brightness-110 hover:border-white/30",
+            compact ? "px-3 py-1.5 text-sm" : "px-4 py-2 text-sm",
+            className,
+          )}
+        >
+          {children}
+        </Link>
+      </motion.div>
     );
   }
 
@@ -107,7 +114,7 @@ export function NavLoginLink({
 
   const colorClass =
     variant === "hero"
-      ? "text-white/70 hover:text-white"
+      ? "text-white/70 hover:bg-white/10 hover:text-white"
       : variant === "sheet"
         ? "text-[#5d5b54] border border-[#c8c4be] hover:bg-[#f6f5f4]"
         : "text-[#5d5b54] hover:text-[#1a1a1a]";
