@@ -226,6 +226,12 @@ async function getSimulationData(campaignId: string, employeeToken: string) {
       ? Math.round((clickedEmployees.size / totalEmployees.size) * 100)
       : 27;
 
+  const companyName =
+    firstString(eventMetadata, ["companyName", "company_name"]) ??
+    firstString(campaignSettings, ["companyName", "company_name"]) ??
+    firstString(campaignEmail, ["companyName", "company_name"]) ??
+    undefined;
+
   return {
     templateCategory: campaign.template_category as string,
     senderName,
@@ -234,6 +240,7 @@ async function getSimulationData(campaignId: string, employeeToken: string) {
     redFlagsFromDb,
     landingPageType,
     clickRate,
+    companyName,
   };
 }
 
@@ -274,6 +281,7 @@ export default async function LoginSimulationPage({
       subject={subject}
       redFlags={redFlags}
       clickRate={simulationData.clickRate}
+      companyName={simulationData.companyName}
     />
   );
 }
