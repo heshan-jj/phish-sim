@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import type { EmployeeRow } from "@/lib/db/queries/analytics";
-import { ChevronUp, ChevronDown, ChevronsUpDown, Search } from "lucide-react";
+import { ChevronUp, ChevronDown, ChevronsUpDown, MousePointerClick, Search } from "lucide-react";
 
 interface Props {
   employees: EmployeeRow[];
@@ -96,7 +96,9 @@ export function EmployeeTable({ employees }: Props) {
 
   const statuses = useMemo(() => {
     const ss = Array.from(new Set(employees.map((e) => e.status))).sort();
-    return ["all", ...ss];
+    // Append a synthetic "clicked" filter to surface link-clickers easily
+    const hasAnyClicked = employees.some((e) => e.hasClicked);
+    return ["all", ...ss, ...(hasAnyClicked ? ["clicked_link"] : [])];
   }, [employees]);
 
   const filtered = useMemo(() => {
@@ -117,7 +119,9 @@ export function EmployeeTable({ employees }: Props) {
       rows = rows.filter((e) => (e.department ?? "Unknown") === deptFilter);
     }
 
-    if (statusFilter !== "all") {
+    if (statusFilter === "clicked_link") {
+      rows = rows.filter((e) => e.hasClicked);
+    } else if (statusFilter !== "all") {
       rows = rows.filter((e) => e.status === statusFilter);
     }
 
@@ -223,7 +227,11 @@ export function EmployeeTable({ employees }: Props) {
         >
           {statuses.map((s) => (
             <option key={s} value={s}>
-              {s === "all" ? "All statuses" : s.charAt(0).toUpperCase() + s.slice(1)}
+              {s === "all"
+                ? "All statuses"
+                : s === "clicked_link"
+                  ? "Clicked link"
+                  : s.charAt(0).toUpperCase() + s.slice(1)}
             </option>
           ))}
         </select>
@@ -304,10 +312,22 @@ export function EmployeeTable({ employees }: Props) {
                     {emp.role ?? <span style={{ color: "var(--ds-muted)" }}>—</span>}
                   </td>
                   <td className="px-4 py-3">
-                    <Badge
-                      label={emp.displayAction}
-                      styles={ACTION_STYLES[emp.displayAction] ?? ACTION_STYLES.Pending}
-                    />
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <Badge
+                        label={emp.displayAction}
+                        styles={ACTION_STYLES[emp.displayAction] ?? ACTION_STYLES.Pending}
+                      />
+                      {emp.hasClicked && emp.displayAction !== "Clicked" && (
+                        <span
+                          className="inline-flex items-center gap-1 rounded-[5px] px-1.5 py-0.5 text-[10px] font-[600]"
+                          style={{ backgroundColor: "#ffe8d4", color: "#dd5b00" }}
+                          title="Clicked the phishing link"
+                        >
+                          <MousePointerClick className="size-2.5" />
+                          Clicked link
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td
                     className="px-4 py-3 text-[13px]"
