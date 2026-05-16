@@ -3,7 +3,6 @@
 import { db } from "@/lib/db";
 import { organizations } from "@/lib/db/schema";
 import { createServerClient } from "@/lib/supabase/server";
-import { createServiceRoleClient } from "@/lib/supabase/server";
 import { eq } from "drizzle-orm";
 
 export interface OrgContext {
@@ -23,59 +22,6 @@ export async function saveStep1(
     .where(eq(organizations.id, orgId));
 }
 
-export async function uploadLogo(formData: FormData) {
-  const supabase = await createServerClient();
-  const serviceRoleClient = createServiceRoleClient();
-  const storageClient = serviceRoleClient ?? supabase;
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    throw new Error("Unauthenticated");
-  }
-
-  const file = formData.get("logo") as File;
-  if (!file || file.size === 0) {
-    throw new Error("No file provided");
-  }
-
-  if (file.size > 2 * 1024 * 1024) {
-    throw new Error("Logo must be 2 MB or smaller");
-  }
-
-  const ext = file.name.split(".").pop() ?? "png";
-  const path = `${user.id}/logo.${ext}`;
-  const fileBuffer = await file.arrayBuffer();
-
-  const { error: uploadError } = await storageClient.storage
-    .from("logos")
-    .upload(path, fileBuffer, {
-      upsert: true,
-      contentType: file.type || undefined,
-    });
-
-  if (uploadError) {
-    if (!serviceRoleClient) {
-      throw new Error(
-        `Upload failed: ${uploadError.message}. Add a Storage INSERT policy for bucket "logos", or set SUPABASE_SERVICE_ROLE_KEY for server-side uploads.`,
-      );
-    }
-    throw new Error(`Upload failed: ${uploadError.message}`);
-  }
-
-  const { data: urlData } = supabase.storage.from("logos").getPublicUrl(path);
-  const publicUrl = urlData.publicUrl;
-
-  // Update the org row with the logo URL
-  await db
-    .update(organizations)
-    .set({ logoUrl: publicUrl })
-    .where(eq(organizations.userId, user.id));
-
-  return publicUrl;
-}
 
 export async function saveContext(orgId: string, context: OrgContext) {
   await db
@@ -100,4 +46,31 @@ export async function getOrgForUser() {
     .limit(1);
 
   return org ?? null;
+}
+
+/** Returns the user's org, creating one if missing (e.g. after signup race). */
+export async function ensureOrgForUser(defaultName = "My Organization") {
+  const supabase = await createServerClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return null;
+
+  const existing = await getOrgForUser();
+  if (existing) return existing;
+
+  const name = defaultName.trim() || "My Organization";
+
+  try {
+    const [created] = await db
+      .insert(organizations)
+      .values({ userId: user.id, name })
+      .returning();
+
+    return created ?? null;
+  } catch {
+    return getOrgForUser();
+  }
 }

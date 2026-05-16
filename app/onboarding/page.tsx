@@ -1,10 +1,9 @@
 "use client";
 
 import {
-  getOrgForUser,
+  ensureOrgForUser,
   saveContext,
   saveStep1,
-  uploadLogo,
   type OrgContext,
 } from "@/app/onboarding/_actions";
 import { Button } from "@/components/ui/button";
@@ -93,6 +92,7 @@ export default function OnboardingPage() {
 
   const [step, setStep] = useState(1);
   const [orgId, setOrgId] = useState<string>("");
+  const [orgLoading, setOrgLoading] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -110,24 +110,60 @@ export default function OnboardingPage() {
   const [events, setEvents] = useState("");
   const [orgStructure, setOrgStructure] = useState("");
 
-  // Load existing org data on mount
-  useEffect(() => {
-    getOrgForUser().then((org) => {
-      if (!org) return;
-      setOrgId(org.id);
-      setOrgName(org.name ?? "");
-      setIndustry(org.industry ?? "");
-      setLogoUrl(org.logoUrl ?? null);
+  function applyOrg(org: NonNullable<Awaited<ReturnType<typeof ensureOrgForUser>>>) {
+    setOrgId(org.id);
+    setOrgName(org.name ?? "");
+    setIndustry(org.industry ?? "");
+    setLogoUrl(org.logoUrl ?? null);
 
-      const ctx = org.context as OrgContext | null;
-      if (ctx) {
-        setVendors(ctx.vendors ?? "");
-        setTerminology(ctx.terminology ?? "");
-        setEvents(ctx.events ?? "");
-        setOrgStructure(ctx.orgStructure ?? "");
-      }
-    });
+    const ctx = org.context as OrgContext | null;
+    if (ctx) {
+      setVendors(ctx.vendors ?? "");
+      setTerminology(ctx.terminology ?? "");
+      setEvents(ctx.events ?? "");
+      setOrgStructure(ctx.orgStructure ?? "");
+    }
+  }
+
+  // Load org on mount (create if missing so Continue is never a silent no-op)
+  useEffect(() => {
+    let cancelled = false;
+
+    ensureOrgForUser()
+      .then((org) => {
+        if (cancelled) return;
+        if (!org) {
+          setError("Please sign in to continue onboarding.");
+          return;
+        }
+        applyOrg(org);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setError("Could not load your workspace. Please refresh and try again.");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setOrgLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
+
+  async function resolveOrgId(): Promise<string | null> {
+    if (orgId) return orgId;
+
+    const org = await ensureOrgForUser(orgName || "My Organization");
+    if (!org) {
+      setError("Please sign in to continue onboarding.");
+      return null;
+    }
+
+    applyOrg(org);
+    return org.id;
+  }
 
   function handleLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0] ?? null;
@@ -138,18 +174,31 @@ export default function OnboardingPage() {
   }
 
   async function handleStep1Next() {
-    if (!orgId) return;
     setLoading(true);
     setError(null);
 
     try {
-      await saveStep1(orgId, { name: orgName, industry });
+      const id = await resolveOrgId();
+      if (!id) return;
+
+      await saveStep1(id, { name: orgName, industry });
 
       if (logoFile) {
         const fd = new FormData();
         fd.append("logo", logoFile);
-        const url = await uploadLogo(fd);
-        setLogoUrl(url);
+        const res = await fetch("/api/upload-logo", {
+          method: "POST",
+          body: fd,
+        });
+        const body = (await res.json()) as { url?: string; error?: string };
+        if (!res.ok) {
+          setError(
+            body.error ??
+              "Logo upload failed. Your details were saved — you can continue without a logo.",
+          );
+        } else {
+          setLogoUrl(body.url ?? null);
+        }
       }
 
       setStep(2);
@@ -161,12 +210,14 @@ export default function OnboardingPage() {
   }
 
   async function handleStep2Next() {
-    if (!orgId) return;
     setLoading(true);
     setError(null);
 
     try {
-      await saveContext(orgId, { vendors, terminology, events, orgStructure });
+      const id = await resolveOrgId();
+      if (!id) return;
+
+      await saveContext(id, { vendors, terminology, events, orgStructure });
       setStep(3);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
@@ -324,19 +375,27 @@ export default function OnboardingPage() {
             )}
 
             <Button
-              onClick={handleStep1Next}
-              disabled={loading || !orgName}
+              type="button"
+              onClick={() => void handleStep1Next()}
+              disabled={loading || orgLoading || !orgName}
               className="w-full h-11 rounded-[8px] text-[14px] font-[500]"
               style={{
                 backgroundColor:
-                  loading || !orgName
+                  loading || orgLoading || !orgName
                     ? "var(--ds-hairline)"
                     : "var(--ds-primary)",
                 color:
-                  loading || !orgName ? "var(--ds-muted)" : "#ffffff",
+                  loading || orgLoading || !orgName
+                    ? "var(--ds-muted)"
+                    : "#ffffff",
               }}
             >
-              {loading ? (
+              {orgLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Loading workspace…
+                </>
+              ) : loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Saving…
