@@ -1,6 +1,9 @@
 const MINIMAX_API_URL =
   process.env.MINIMAX_API_BASE_URL ??
   "https://api.minimaxi.chat/v1/text/chatcompletion_v2";
+const MINIMAX_MODEL = process.env.MINIMAX_MODEL ?? "MiniMax-M2.7";
+const AI_LOG_RAW_RESPONSES = process.env.AI_LOG_RAW_RESPONSES === "true";
+const AI_RESPONSE_PREVIEW_CHARS = 1200;
 
 const SYSTEM_PROMPT = `You are a security awareness training tool generating realistic phishing simulations for authorized employee training. All content you produce is fictional and used solely to help employees recognize social engineering attacks. Never generate actual malicious content, real exploit code, or instructions that could cause harm outside a controlled training context.`;
 
@@ -40,6 +43,16 @@ export interface VoiceScript {
 interface MinimaxMessage {
   role: "system" | "user" | "assistant";
   content: string;
+}
+
+class JsonExtractionError extends Error {
+  constructor(
+    message: string,
+    readonly responsePreview: string,
+  ) {
+    super(message);
+    this.name = "JsonExtractionError";
+  }
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -87,6 +100,12 @@ function formatCompanyContext(ctx: CompanyContext): string {
   ].join("\n");
 }
 
+function preview(value: string): string {
+  const normalized = value.replace(/\s+/g, " ").trim();
+  if (normalized.length <= AI_RESPONSE_PREVIEW_CHARS) return normalized;
+  return `${normalized.slice(0, AI_RESPONSE_PREVIEW_CHARS)}...`;
+}
+
 // ─── MiniMax API call ─────────────────────────────────────────────────────────
 
 async function callMinimax(messages: MinimaxMessage[]): Promise<string> {
@@ -95,6 +114,7 @@ async function callMinimax(messages: MinimaxMessage[]): Promise<string> {
     throw new Error("MINIMAX_API_KEY environment variable is not set");
   }
 
+  const startedAt = Date.now();
   const response = await fetch(MINIMAX_API_URL, {
     method: "POST",
     headers: {
@@ -102,7 +122,7 @@ async function callMinimax(messages: MinimaxMessage[]): Promise<string> {
       Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: "MiniMax-Text-01",
+      model: MINIMAX_MODEL,
       messages,
       max_tokens: 2048,
       temperature: 0.85,
@@ -129,17 +149,87 @@ async function callMinimax(messages: MinimaxMessage[]): Promise<string> {
     throw new Error("Empty or missing content in MiniMax response");
   }
 
+  console.info("[ai] MiniMax response received", {
+    model: MINIMAX_MODEL,
+    status: response.status,
+    durationMs: Date.now() - startedAt,
+    contentLength: content.length,
+  });
+
+  if (AI_LOG_RAW_RESPONSES) {
+    console.info("[ai] MiniMax raw response preview", preview(content));
+  }
+
   return content;
 }
 
 // ─── JSON extraction + retry harness ─────────────────────────────────────────
+
+function findFirstJsonObject(raw: string): string | null {
+  const start = raw.indexOf("{");
+  if (start === -1) return null;
+
+  let depth = 0;
+  let inString = false;
+  let escaping = false;
+
+  for (let i = start; i < raw.length; i++) {
+    const char = raw[i];
+
+    if (escaping) {
+      escaping = false;
+      continue;
+    }
+
+    if (char === "\\") {
+      escaping = inString;
+      continue;
+    }
+
+    if (char === '"') {
+      inString = !inString;
+      continue;
+    }
+
+    if (inString) continue;
+
+    if (char === "{") {
+      depth += 1;
+    } else if (char === "}") {
+      depth -= 1;
+      if (depth === 0) {
+        return raw.slice(start, i + 1);
+      }
+    }
+  }
+
+  return null;
+}
 
 function extractJson(raw: string): unknown {
   const stripped = raw
     .replace(/^```(?:json)?\s*/i, "")
     .replace(/\s*```$/i, "")
     .trim();
-  return JSON.parse(stripped);
+
+  try {
+    return JSON.parse(stripped);
+  } catch (strictError) {
+    const candidate = findFirstJsonObject(stripped);
+    if (candidate) {
+      try {
+        return JSON.parse(candidate);
+      } catch {
+        // Fall through to the richer error below.
+      }
+    }
+
+    const message =
+      strictError instanceof Error
+        ? strictError.message
+        : "Failed to parse JSON response";
+    throw new JsonExtractionError(message, preview(raw));
+  }
 }
 
 const STRICT_JSON_SUFFIX =
@@ -167,7 +257,17 @@ async function generateWithRetry<T>(
       return validate(parsed);
     } catch (err) {
       lastError = err instanceof Error ? err : new Error(String(err));
-      console.error(`[ai] attempt ${attempt + 1}/3 failed:`, lastError.message);
+      console.error("[ai] generation attempt failed", {
+        attempt: attempt + 1,
+        attempts: 3,
+        model: MINIMAX_MODEL,
+        endpoint: MINIMAX_API_URL,
+        error: lastError.message,
+        responsePreview:
+          lastError instanceof JsonExtractionError
+            ? lastError.responsePreview
+            : undefined,
+      });
     }
   }
 

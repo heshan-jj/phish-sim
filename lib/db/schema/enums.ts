@@ -7,6 +7,7 @@ export const campaignStatusEnum = pgEnum("campaign_status", [
 ]);
 
 export const campaignEventActionEnum = pgEnum("campaign_event_action", [
+  "sent",
   "email_opened",
   "link_clicked",
   "credential_attempted",

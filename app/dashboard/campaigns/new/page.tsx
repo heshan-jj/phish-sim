@@ -145,7 +145,7 @@ export default function NewCampaignPage() {
     setError(null);
     try {
       const { id } = await persistCampaign("active");
-      const res = await fetch(`/api/campaigns/${id}/send`, { method: "POST" });
+      const res = await fetch(`/api/campaigns/${id}/launch`, { method: "POST" });
       const body = (await res.json()) as { error?: string };
       if (!res.ok) {
         throw new Error(body.error ?? "Failed to start campaign send");

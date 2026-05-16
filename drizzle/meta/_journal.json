@@ -29,6 +29,13 @@
       "when": 1778918649647,
       "tag": "0003_unusual_slipstream",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1778928000000,
+      "tag": "0004_sent_campaign_event",
+      "breakpoints": true
     }
   ]
 }
