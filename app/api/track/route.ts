@@ -12,6 +12,10 @@ const ALLOWED_ACTIONS = new Set([
 
 type JsonRecord = Record<string, unknown>;
 
+function isJsonRecord(value: unknown): value is JsonRecord {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
 function normalizeRedirect(raw: string | null): string {
   if (!raw) return "/";
   try {
@@ -35,6 +39,26 @@ function mergeMetadata(
     Object.assign(metadata, requestMetadata as JsonRecord);
   }
   return metadata;
+}
+
+function sanitizeCredentialMetadata(metadata: unknown): JsonRecord {
+  if (!isJsonRecord(metadata)) {
+    return {};
+  }
+
+  const sanitized: JsonRecord = { ...metadata };
+  if ("password" in sanitized) {
+    delete sanitized.password;
+  }
+
+  const rawPasswordLength = sanitized.passwordLength;
+  if (typeof rawPasswordLength !== "number" || Number.isNaN(rawPasswordLength)) {
+    sanitized.passwordLength = 0;
+  }
+
+  sanitized.employeeStatus = "compromised";
+  sanitized.compromisedAt = new Date().toISOString();
+  return sanitized;
 }
 
 async function resolveTrackingContext(token: string) {
@@ -148,12 +172,16 @@ export async function POST(request: NextRequest) {
 
   const userAgent = request.headers.get("user-agent");
   const ip = request.headers.get("x-forwarded-for") ?? request.headers.get("x-real-ip");
+  const metadata =
+    action === "credential_attempted"
+      ? sanitizeCredentialMetadata(body.metadata)
+      : body.metadata;
 
   try {
     const inserted = await insertEvent({
       token,
       action,
-      metadata: body.metadata,
+      metadata,
       userAgent,
       ip,
     });
