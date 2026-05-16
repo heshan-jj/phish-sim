@@ -32,7 +32,7 @@ const TIER_STYLES = {
     icon: Shield,
     iconColor: "#1aae39",
   },
-  at_risk: {
+  "at-risk": {
     border: "#dd5b00",
     bg: "#fff8f0",
     icon: AlertTriangle,

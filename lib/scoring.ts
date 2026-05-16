@@ -9,7 +9,7 @@ export type DepartmentScore = {
   mostVulnerableTemplate: string | null;
 };
 
-export type RiskTier = "champion" | "at_risk" | "compromised";
+export type RiskTier = "champion" | "at-risk" | "compromised";
 
 const SCORE_START = 100;
 const PENALTY_EMAIL_OPENED = 5;
@@ -40,7 +40,7 @@ export function calculateRiskScore(events: CampaignEvent[]): number {
 
 export function getRiskTier(score: number): RiskTier {
   if (score >= 75) return "champion";
-  if (score >= 40) return "at_risk";
+  if (score >= 40) return "at-risk";
   return "compromised";
 }
 
@@ -48,7 +48,7 @@ export function getRiskTierLabel(tier: RiskTier): string {
   switch (tier) {
     case "champion":
       return "Security Champion";
-    case "at_risk":
+    case "at-risk":
       return "At Risk";
     case "compromised":
       return "Compromised";
