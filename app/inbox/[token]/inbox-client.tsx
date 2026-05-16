@@ -139,14 +139,18 @@ export function InboxClient({
             </button>
             <button
               type="button"
-              className="flex items-center gap-3 rounded-r-full px-4 py-2 text-left text-[14px] text-[#3c4043] hover:bg-[#f1f3f4]"
+              aria-disabled="true"
+              tabIndex={-1}
+              className="flex items-center gap-3 rounded-r-full px-4 py-2 text-left text-[14px] text-[#3c4043] opacity-50 pointer-events-none"
             >
               <Send className="size-4" />
               Sent
             </button>
             <button
               type="button"
-              className="flex items-center gap-3 rounded-r-full px-4 py-2 text-left text-[14px] text-[#3c4043] hover:bg-[#f1f3f4]"
+              aria-disabled="true"
+              tabIndex={-1}
+              className="flex items-center gap-3 rounded-r-full px-4 py-2 text-left text-[14px] text-[#3c4043] opacity-50 pointer-events-none"
             >
               <Trash2 className="size-4" />
               Trash

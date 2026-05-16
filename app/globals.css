@@ -173,7 +173,9 @@
     overflow-x: clip;
   }
   html.landing-menu-open,
-  body.landing-menu-open {
+  body.landing-menu-open,
+  html.dashboard-menu-open,
+  body.dashboard-menu-open {
     overflow: hidden;
   }
 }

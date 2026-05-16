@@ -1,6 +1,11 @@
 import { DashboardOverviewContent } from "@/app/dashboard/dashboard-overview-content";
 import { DashboardOverviewSkeleton } from "@/components/dashboard/dashboard-overview-skeleton";
+import type { Metadata } from "next";
 import { Suspense } from "react";
+
+export const metadata: Metadata = {
+  title: "Overview",
+};
 
 export default function DashboardPage() {
   return (

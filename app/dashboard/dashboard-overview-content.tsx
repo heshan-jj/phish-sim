@@ -14,6 +14,7 @@ import {
 import { ArrowRight, Megaphone, Plus, Users } from "lucide-react";
 import Link from "next/link";
 import { TemplateRecommendationsCard } from "@/components/dashboard/template-recommendations-card";
+import { getCampaignStatusStyle } from "@/lib/ui/campaign-status-style";
 
 function formatDate(date: Date | null) {
   if (!date) return "—";
@@ -26,27 +27,6 @@ function formatDate(date: Date | null) {
 
 function statusLabel(status: string) {
   return status.charAt(0).toUpperCase() + status.slice(1);
-}
-
-function statusStyles(status: string): React.CSSProperties {
-  switch (status) {
-    case "active":
-      return {
-        backgroundColor: "var(--ds-lavender)",
-        color: "var(--ds-primary)",
-      };
-    case "complete":
-      return {
-        backgroundColor: "#d9f3e1",
-        color: "#1aae39",
-      };
-    default:
-      return {
-        backgroundColor: "var(--ds-surface)",
-        color: "var(--ds-charcoal)",
-        border: "1px solid var(--ds-hairline)",
-      };
-  }
 }
 
 export async function DashboardOverviewContent() {
@@ -199,14 +179,22 @@ export async function DashboardOverviewContent() {
               <TableBody>
                 {stats.recentCampaigns.map((campaign) => (
                   <TableRow key={campaign.id}>
-                    <TableCell className="font-medium">{campaign.name}</TableCell>
+                    <TableCell className="font-medium">
+                      <Link
+                        href={`/dashboard/campaigns/${campaign.id}/analytics`}
+                        className="ds-interactive-link"
+                        style={{ color: "var(--ds-link)" }}
+                      >
+                        {campaign.name}
+                      </Link>
+                    </TableCell>
                     <TableCell style={{ color: "var(--ds-steel)" }}>
                       {getTemplateDisplayName(campaign.templateCategory)}
                     </TableCell>
                     <TableCell>
                       <span
                         className="inline-flex rounded-[6px] px-2 py-0.5 text-[12px] font-[600]"
-                        style={statusStyles(campaign.status)}
+                        style={getCampaignStatusStyle(campaign.status)}
                       >
                         {statusLabel(campaign.status)}
                       </span>

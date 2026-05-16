@@ -66,6 +66,8 @@ function SortButton({
   return (
     <button
       type="button"
+      role="tab"
+      aria-selected={active}
       onClick={onClick}
       className={cn(
         "rounded-[8px] px-3 py-1.5 text-[13px] font-[500] transition-colors",
@@ -150,6 +152,8 @@ export function LeaderboardClient({
 
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div
+          role="tablist"
+          aria-label="Leaderboard sort"
           className="inline-flex items-center gap-1 rounded-[10px] p-1"
           style={{ backgroundColor: "var(--ds-surface)" }}
         >

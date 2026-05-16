@@ -243,6 +243,7 @@ export function EmployeeCsvImportDialog() {
             className="rounded-[12px] border overflow-hidden"
             style={{ borderColor: "var(--ds-hairline)" }}
           >
+            <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -265,6 +266,7 @@ export function EmployeeCsvImportDialog() {
                 ))}
               </TableBody>
             </Table>
+            </div>
             {remaining > 0 && (
               <p
                 className="px-3 py-2 text-[13px] border-t"

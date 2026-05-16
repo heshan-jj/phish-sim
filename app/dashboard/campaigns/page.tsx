@@ -3,7 +3,12 @@ import { DashboardTableSkeleton } from "@/components/dashboard/dashboard-table-s
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import Link from "next/link";
+import type { Metadata } from "next";
 import { Suspense } from "react";
+
+export const metadata: Metadata = {
+  title: "Campaigns",
+};
 
 export default function CampaignsPage() {
   return (

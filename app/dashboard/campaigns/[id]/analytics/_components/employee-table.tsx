@@ -2,6 +2,8 @@
 
 import { useState, useMemo } from "react";
 import type { EmployeeRow } from "@/lib/db/queries/analytics";
+import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import { ChevronUp, ChevronDown, ChevronsUpDown, MousePointerClick, Search } from "lucide-react";
 
 interface Props {
@@ -171,7 +173,12 @@ export function EmployeeTable({ employees }: Props) {
   }
 
   const thClass =
-    "px-4 py-3 text-left text-[12px] font-[600] uppercase tracking-wide cursor-pointer select-none";
+    "px-4 py-3 text-left text-[12px] font-[600] uppercase tracking-wide select-none";
+
+  function ariaSortFor(key: SortKey): "ascending" | "descending" | "none" {
+    if (key !== sortKey) return "none";
+    return sortDir === "asc" ? "ascending" : "descending";
+  }
 
   return (
     <div>
@@ -180,50 +187,39 @@ export function EmployeeTable({ employees }: Props) {
         className="flex flex-wrap items-center gap-3 px-6 py-4 border-b"
         style={{ borderColor: "var(--ds-hairline)" }}
       >
-        <div
-          className="flex items-center gap-2 flex-1 min-w-[200px] max-w-sm rounded-[8px] border px-3 py-2"
-          style={{
-            borderColor: "var(--ds-hairline-strong)",
-            backgroundColor: "var(--ds-canvas)",
-          }}
-        >
-          <Search className="size-4 shrink-0" style={{ color: "var(--ds-steel)" }} />
-          <input
-            type="text"
+        <div className="relative flex-1 min-w-[200px] max-w-sm">
+          <Search
+            className="absolute left-3 top-1/2 size-4 -translate-y-1/2 shrink-0 pointer-events-none"
+            style={{ color: "var(--ds-steel)" }}
+          />
+          <Input
+            type="search"
             placeholder="Search employees…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="flex-1 bg-transparent outline-none text-[13px]"
-            style={{ color: "var(--ds-ink)" }}
+            className="pl-9"
+            aria-label="Search employees"
           />
         </div>
 
-        <select
+        <Select
           value={deptFilter}
           onChange={(e) => setDeptFilter(e.target.value)}
-          className="rounded-[8px] border px-3 py-2 text-[13px] outline-none"
-          style={{
-            borderColor: "var(--ds-hairline-strong)",
-            backgroundColor: "var(--ds-canvas)",
-            color: "var(--ds-ink)",
-          }}
+          className="w-auto sm:min-w-[160px]"
+          aria-label="Filter by department"
         >
           {departments.map((d) => (
             <option key={d} value={d}>
               {d === "all" ? "All departments" : d}
             </option>
           ))}
-        </select>
+        </Select>
 
-        <select
+        <Select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="rounded-[8px] border px-3 py-2 text-[13px] outline-none"
-          style={{
-            borderColor: "var(--ds-hairline-strong)",
-            backgroundColor: "var(--ds-canvas)",
-            color: "var(--ds-ink)",
-          }}
+          className="w-auto sm:min-w-[140px]"
+          aria-label="Filter by status"
         >
           {statuses.map((s) => (
             <option key={s} value={s}>
@@ -234,7 +230,7 @@ export function EmployeeTable({ employees }: Props) {
                   : s.charAt(0).toUpperCase() + s.slice(1)}
             </option>
           ))}
-        </select>
+        </Select>
 
         <span className="text-[13px] ml-auto" style={{ color: "var(--ds-steel)" }}>
           {sorted.length} of {employees.length}
@@ -260,12 +256,16 @@ export function EmployeeTable({ employees }: Props) {
                   key={key}
                   className={thClass}
                   style={{ color: "var(--ds-steel)" }}
-                  onClick={() => handleSort(key)}
+                  aria-sort={ariaSortFor(key)}
                 >
-                  <span className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => handleSort(key)}
+                    className="flex w-full items-center gap-1.5 text-left hover:text-[var(--ds-ink)]"
+                  >
                     {label}
                     <SortIcon column={key} active={sortKey} dir={sortDir} />
-                  </span>
+                  </button>
                 </th>
               ))}
             </tr>

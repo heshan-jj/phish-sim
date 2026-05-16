@@ -4,14 +4,66 @@ import {
   getCachedTemplateRecommendationsAction,
   refreshTemplateRecommendationsAction,
 } from "@/app/dashboard/_actions/recommendations";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { RecommendationCampaignCard } from "@/components/dashboard/recommendation-campaign-card";
 import { Button } from "@/components/ui/button";
+import { FormError } from "@/components/ui/form-error";
 import type { TemplateRecommendation } from "@/lib/ai-extended";
-import { buildRecommendationWizardHref } from "@/lib/campaign-wizard-params";
-import { getTemplateById } from "@/lib/campaign-templates";
-import { Loader2 } from "lucide-react";
-import Link from "next/link";
+import { cn } from "@/lib/utils";
+import { Loader2, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+
+const CARD_TRACK_CLASS =
+  "flex gap-4 overflow-x-auto snap-x snap-mandatory pb-1 -mx-1 px-1 sm:mx-0 sm:px-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:snap-none lg:grid-cols-3";
+
+function RecommendationCardSkeleton() {
+  return (
+    <div
+      className="flex min-w-[min(100%,320px)] shrink-0 snap-start flex-col overflow-hidden rounded-[12px] border-2 border-transparent sm:min-w-0 animate-pulse"
+      style={{
+        backgroundColor: "var(--ds-canvas)",
+        boxShadow: "0 1px 2px rgba(15, 15, 15, 0.04)",
+      }}
+    >
+      <div className="h-1 w-full" style={{ backgroundColor: "var(--ds-lavender)" }} />
+      <div className="flex flex-col gap-4 p-4 sm:p-5">
+        <div className="flex items-start gap-3">
+          <div
+            className="size-10 shrink-0 rounded-[10px]"
+            style={{ backgroundColor: "var(--ds-surface)" }}
+          />
+          <div className="flex-1 space-y-2">
+            <div
+              className="h-4 w-12 rounded-full"
+              style={{ backgroundColor: "var(--ds-surface)" }}
+            />
+            <div
+              className="h-5 w-3/4 rounded-[6px]"
+              style={{ backgroundColor: "var(--ds-surface)" }}
+            />
+          </div>
+        </div>
+        <div
+          className="h-20 rounded-[8px]"
+          style={{ backgroundColor: "var(--ds-surface)" }}
+        />
+        <div className="space-y-2">
+          <div
+            className="h-3 w-full rounded-[4px]"
+            style={{ backgroundColor: "var(--ds-surface)" }}
+          />
+          <div
+            className="h-3 w-5/6 rounded-[4px]"
+            style={{ backgroundColor: "var(--ds-surface)" }}
+          />
+        </div>
+        <div
+          className="h-10 w-full rounded-[8px]"
+          style={{ backgroundColor: "var(--ds-surface)" }}
+        />
+      </div>
+    </div>
+  );
+}
 
 export function TemplateRecommendationsCard() {
   const [recommendations, setRecommendations] = useState<TemplateRecommendation[]>(
@@ -55,76 +107,133 @@ export function TemplateRecommendationsCard() {
   }
 
   const busy = loadingCache || refreshing;
+  const headingId = "recommendations-heading";
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
-        <div>
-          <CardTitle className="text-[16px]">Recommended next campaigns</CardTitle>
-          {generatedAt && !loadingCache && (
-            <p className="text-[12px] mt-0.5" style={{ color: "var(--ds-steel)" }}>
-              Updated {new Date(generatedAt).toLocaleString()}
+    <section
+      aria-labelledby={headingId}
+      className="overflow-hidden rounded-[16px] border"
+      style={{
+        borderColor: "var(--ds-hairline)",
+        boxShadow: "0 4px 12px rgba(15, 15, 15, 0.08)",
+      }}
+    >
+      <div
+        className="border-b px-4 py-5 sm:px-6"
+        style={{
+          borderColor: "var(--ds-hairline)",
+          background:
+            "linear-gradient(135deg, var(--ds-lavender) 0%, var(--ds-canvas) 55%, var(--ds-surface-soft) 100%)",
+        }}
+      >
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
+            <div
+              className="mb-2 inline-flex items-center gap-2 rounded-full border px-2.5 py-1 text-[11px] font-[600] uppercase tracking-wide"
+              style={{
+                borderColor: "var(--ds-hairline-strong)",
+                backgroundColor: "var(--ds-canvas)",
+                color: "var(--ds-primary)",
+              }}
+            >
+              <Sparkles className="size-3.5 shrink-0" aria-hidden />
+              AI-powered
+            </div>
+            <h2
+              id={headingId}
+              className="text-[18px] font-[600] leading-[1.3] sm:text-[20px]"
+              style={{ color: "var(--ds-ink)" }}
+            >
+              AI picks for your next drill
+            </h2>
+            <p className="mt-1 text-[13px] leading-[1.45]" style={{ color: "var(--ds-steel)" }}>
+              Tailored simulation templates based on your org and past campaigns.
             </p>
-          )}
+            {generatedAt && !loadingCache && (
+              <p className="mt-1 text-[12px]" style={{ color: "var(--ds-stone)" }}>
+                Updated {new Date(generatedAt).toLocaleString()}
+              </p>
+            )}
+          </div>
+          <Button
+            type="button"
+            variant="dsOutline"
+            size="sm"
+            className="shrink-0 self-start"
+            onClick={() => void handleRefresh()}
+            disabled={busy}
+            aria-busy={refreshing}
+          >
+            {refreshing ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                Refreshing…
+              </>
+            ) : (
+              "Refresh picks"
+            )}
+          </Button>
         </div>
-        <Button
-          type="button"
-          variant="dsOutline"
-          size="sm"
-          onClick={() => void handleRefresh()}
-          disabled={busy}
-        >
-          {refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : "Refresh"}
-        </Button>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-3">
+      </div>
+
+      <div className="px-4 py-5 sm:px-6">
         {loadingCache ? (
-          <p className="text-[13px]" style={{ color: "var(--ds-steel)" }}>
-            Loading recommendations…
-          </p>
+          <div className={CARD_TRACK_CLASS}>
+            {[1, 2, 3].map((i) => (
+              <RecommendationCardSkeleton key={i} />
+            ))}
+          </div>
         ) : recommendations.length === 0 ? (
-          <p className="text-[13px]" style={{ color: "var(--ds-steel)" }}>
-            No recommendations yet. Click Refresh to generate AI suggestions for your
-            next campaigns.
-          </p>
+          <div className="flex flex-col items-center gap-4 py-8 text-center sm:py-10">
+            <div
+              className="flex size-14 items-center justify-center rounded-full"
+              style={{ backgroundColor: "var(--ds-lavender)", color: "var(--ds-primary)" }}
+            >
+              <Sparkles className="size-7" aria-hidden />
+            </div>
+            <div className="max-w-sm">
+              <p className="text-[15px] font-[600]" style={{ color: "var(--ds-ink)" }}>
+                No picks yet
+              </p>
+              <p className="mt-1 text-[13px] leading-[1.5]" style={{ color: "var(--ds-steel)" }}>
+                Generate AI suggestions for your next phishing simulations—matched to your
+                team and recent results.
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="ds"
+              size="app"
+              onClick={() => void handleRefresh()}
+              disabled={busy}
+            >
+              {refreshing ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" aria-hidden />
+                  Generating…
+                </>
+              ) : (
+                <>
+                  <Sparkles className="size-4" aria-hidden />
+                  Generate picks
+                </>
+              )}
+            </Button>
+          </div>
         ) : (
-          recommendations.map((rec) => {
-            const template = getTemplateById(rec.templateId);
-            return (
-              <div
+          <div className={cn(CARD_TRACK_CLASS)}>
+            {recommendations.map((rec, index) => (
+              <RecommendationCampaignCard
                 key={rec.templateId}
-                className="rounded-lg border p-3"
-                style={{ borderColor: "var(--ds-hairline)" }}
-              >
-                <p className="text-[14px] font-[600]" style={{ color: "var(--ds-ink)" }}>
-                  {template?.title ?? rec.templateId}
-                </p>
-                <p className="text-[13px] mt-1" style={{ color: "var(--ds-steel)" }}>
-                  {rec.reason}
-                </p>
-                <p className="text-[12px] mt-1" style={{ color: "var(--ds-stone)" }}>
-                  Suggested difficulty: {rec.suggestedDifficulty}
-                </p>
-                <Link
-                  href={buildRecommendationWizardHref({
-                    templateId: rec.templateId,
-                    suggestedDifficulty: rec.suggestedDifficulty,
-                  })}
-                  className="text-[13px] font-[600] mt-2 inline-block"
-                  style={{ color: "var(--ds-link)" }}
-                >
-                  Start campaign →
-                </Link>
-              </div>
-            );
-          })
+                rank={(index + 1) as 1 | 2 | 3}
+                recommendation={rec}
+              />
+            ))}
+          </div>
         )}
-        {error && (
-          <p className="text-[13px]" style={{ color: "var(--ds-error)" }}>
-            {error}
-          </p>
-        )}
-      </CardContent>
-    </Card>
+
+        {error && <FormError className="mt-4">{error}</FormError>}
+      </div>
+    </section>
   );
 }

@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import Link from "next/link";
 import { useMemo } from "react";
 
 export function SimulationDebriefDialog({
@@ -21,8 +22,6 @@ export function SimulationDebriefDialog({
   redFlags,
   clickRate,
   coachingTip,
-  accentClass = "text-[#2563eb]",
-  buttonClass = "bg-[#2563eb] hover:bg-[#1d4ed8]",
 }: DebriefProps) {
   const displayRedFlags = useMemo(() => redFlags.slice(0, 5), [redFlags]);
 
@@ -30,59 +29,75 @@ export function SimulationDebriefDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-xl sm:max-w-xl" showCloseButton>
         <DialogHeader>
-          <DialogTitle className="text-2xl font-semibold text-[#151515]">
+          <DialogTitle
+            className="text-2xl font-semibold"
+            style={{ color: "var(--ds-ink)" }}
+          >
             This was a phishing simulation
           </DialogTitle>
-          <DialogDescription className="text-black/70">
+          <DialogDescription style={{ color: "var(--ds-steel)" }}>
             You reached a safe training page. No credentials were stored.
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-col gap-5">
-          <div>
-            <div className="rounded-lg border border-black/10 bg-black/[0.02] p-4 text-sm">
-              <p>
-                <span className="font-semibold">Original sender:</span> {senderName} (
-                {senderEmail})
-              </p>
-              <p className="mt-1">
-                <span className="font-semibold">Original subject:</span> {subject}
-              </p>
-            </div>
-
-            <div>
-              <p className="text-sm font-semibold text-black">Red flags in the email</p>
-              <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-black/80">
-                {displayRedFlags.map((flag) => (
-                  <li key={flag}>{flag}</li>
-                ))}
-              </ul>
-            </div>
-
-            {coachingTip && (
-              <p className="text-sm text-black/80 mt-3 rounded-lg border border-black/10 bg-black/[0.02] p-3">
-                {coachingTip}
-              </p>
-            )}
-
-            <p className="text-sm text-black/80 mt-3">
-              You&apos;re not alone — {clickRate}% of employees click on emails like this.
+          <div
+            className="rounded-lg border p-4 text-sm"
+            style={{
+              borderColor: "var(--ds-hairline)",
+              backgroundColor: "var(--ds-surface)",
+            }}
+          >
+            <p style={{ color: "var(--ds-charcoal)" }}>
+              <span className="font-semibold">Original sender:</span> {senderName} (
+              {senderEmail})
             </p>
-            <a
-              href="/security-tips"
-              className={`inline-block text-sm font-semibold ${accentClass} hover:underline`}
-            >
-              Learn more
-            </a>
+            <p className="mt-1" style={{ color: "var(--ds-charcoal)" }}>
+              <span className="font-semibold">Original subject:</span> {subject}
+            </p>
           </div>
+
+          <div>
+            <p className="text-sm font-semibold" style={{ color: "var(--ds-ink)" }}>
+              Red flags in the email
+            </p>
+            <ul
+              className="mt-2 list-disc space-y-1 pl-5 text-sm"
+              style={{ color: "var(--ds-slate)" }}
+            >
+              {displayRedFlags.map((flag) => (
+                <li key={flag}>{flag}</li>
+              ))}
+            </ul>
+          </div>
+
+          {coachingTip && (
+            <p
+              className="text-sm rounded-lg border p-3"
+              style={{
+                color: "var(--ds-slate)",
+                borderColor: "var(--ds-hairline)",
+                backgroundColor: "var(--ds-surface)",
+              }}
+            >
+              {coachingTip}
+            </p>
+          )}
+
+          <p className="text-sm" style={{ color: "var(--ds-slate)" }}>
+            You&apos;re not alone — {clickRate}% of employees click on emails like this.
+          </p>
+          <Link
+            href="/security-tips"
+            className="inline-block text-sm font-semibold ds-interactive-link"
+            style={{ color: "var(--ds-link)" }}
+          >
+            Learn more
+          </Link>
         </div>
 
         <DialogFooter>
-          <Button
-            type="button"
-            className={`text-white ${buttonClass}`}
-            onClick={() => onOpenChange(false)}
-          >
+          <Button type="button" variant="ds" size="app" onClick={() => onOpenChange(false)}>
             Close
           </Button>
         </DialogFooter>

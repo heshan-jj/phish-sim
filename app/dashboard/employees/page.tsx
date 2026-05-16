@@ -1,6 +1,11 @@
 import { EmployeesContent } from "@/app/dashboard/employees/employees-content";
 import { EmployeesContentSkeleton } from "@/components/dashboard/employees-content-skeleton";
+import type { Metadata } from "next";
 import { Suspense } from "react";
+
+export const metadata: Metadata = {
+  title: "Employees",
+};
 
 export default function EmployeesPage() {
   return (

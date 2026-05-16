@@ -1,4 +1,9 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
+
+export const metadata: Metadata = {
+  title: "Security leaderboard",
+};
 import { LeaderboardContent } from "./_components/leaderboard-content";
 import { LeaderboardSkeleton } from "./_components/leaderboard-skeleton";
 

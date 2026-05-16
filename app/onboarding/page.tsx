@@ -9,6 +9,7 @@ import {
   type OrgContext,
 } from "@/app/onboarding/_actions";
 import { Button } from "@/components/ui/button";
+import { FormError } from "@/components/ui/form-error";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
@@ -45,6 +46,7 @@ function StepIndicator({ current }: { current: number }) {
           <div key={step} className="flex items-center">
             <div
               className="w-8 h-8 rounded-full flex items-center justify-center text-[13px] font-[600] transition-colors"
+              aria-current={isActive ? "step" : undefined}
               style={{
                 backgroundColor: isActive
                   ? "var(--ds-primary)"
@@ -339,8 +341,9 @@ export default function OnboardingPage() {
 
             <div className="flex flex-col gap-1.5">
               <Label>Company logo</Label>
-              <div
-                className="rounded-[8px] border border-dashed p-4 flex flex-col items-center gap-3 cursor-pointer transition-colors"
+              <button
+                type="button"
+                className="rounded-[8px] border border-dashed p-4 flex flex-col items-center gap-3 cursor-pointer transition-colors w-full"
                 style={{ borderColor: "var(--ds-hairline-strong)" }}
                 onClick={() => fileInputRef.current?.click()}
               >
@@ -384,24 +387,19 @@ export default function OnboardingPage() {
                   className="hidden"
                   onChange={handleLogoChange}
                 />
-              </div>
-              <p
-                className="text-[12px]"
-                style={{ color: "var(--ds-stone)" }}
-              >
-                Requires a &quot;logos&quot; bucket in Supabase Storage set to
-                public.
-              </p>
+              </button>
+              {process.env.NODE_ENV === "development" && (
+                <p
+                  className="text-[12px]"
+                  style={{ color: "var(--ds-stone)" }}
+                >
+                  Requires a &quot;logos&quot; bucket in Supabase Storage set to
+                  public.
+                </p>
+              )}
             </div>
 
-            {error && (
-              <p
-                className="text-[13px] leading-[1.40]"
-                style={{ color: "var(--ds-error)" }}
-              >
-                {error}
-              </p>
-            )}
+            {error && <FormError>{error}</FormError>}
 
             <Button
               type="button"

@@ -129,6 +129,7 @@ export function EmployeesClient({
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="h-11 flex-1 rounded-[8px] border-[var(--ds-hairline-strong)] bg-[var(--ds-canvas)]"
+          aria-label="Search employees"
         />
         <Select
           value={departmentFilter}
@@ -155,19 +156,21 @@ export function EmployeesClient({
       >
         {confirmDeleteAll && (
           <div
-            className="flex items-center gap-3 px-5 py-3 border-b text-[13px]"
-            style={{ backgroundColor: "#fde0ec", borderColor: "#fca5a5" }}
+            className="flex flex-col gap-3 px-5 py-3 border-b text-[13px] sm:flex-row sm:items-center sm:justify-between"
+            style={{ backgroundColor: "var(--ds-tint-rose)", borderColor: "#fca5a5" }}
           >
-            <AlertTriangle
-              className="size-4 shrink-0"
-              style={{ color: "#e03131" }}
-            />
-            <span className="font-[500]" style={{ color: "#7f1d1d" }}>
-              This will permanently delete all {employees.length} employee
-              {employees.length !== 1 ? "s" : ""} and their campaign history.
-              This cannot be undone.
-            </span>
-            <div className="ml-auto flex items-center gap-2 shrink-0">
+            <div className="flex items-start gap-3 min-w-0">
+              <AlertTriangle
+                className="size-4 shrink-0 mt-0.5"
+                style={{ color: "var(--ds-error)" }}
+              />
+              <span className="font-[500]" style={{ color: "#7f1d1d" }}>
+                This will permanently delete all {employees.length} employee
+                {employees.length !== 1 ? "s" : ""} and their campaign history.
+                This cannot be undone.
+              </span>
+            </div>
+            <div className="flex items-center gap-2 shrink-0 sm:ml-auto">
               <Button
                 size="sm"
                 disabled={isPending}
@@ -199,7 +202,6 @@ export function EmployeesClient({
               <TableHead>Department</TableHead>
               <TableHead>Role</TableHead>
               <TableHead>Seniority</TableHead>
-              <TableHead>Risk score</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -207,7 +209,7 @@ export function EmployeesClient({
             {filtered.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={7}
+                  colSpan={6}
                   className="h-24 text-center text-[14px]"
                   style={{ color: "var(--ds-steel)" }}
                 >
@@ -222,7 +224,6 @@ export function EmployeesClient({
                   <TableCell>{displayValue(employee.department)}</TableCell>
                   <TableCell>{displayValue(employee.role)}</TableCell>
                   <TableCell>{formatSeniority(employee.seniority)}</TableCell>
-                  <TableCell>—</TableCell>
                   <TableCell className="text-right">
                     <div className="inline-flex items-center justify-end gap-1">
                       <Button

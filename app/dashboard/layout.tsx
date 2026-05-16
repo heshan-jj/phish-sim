@@ -1,6 +1,14 @@
 import { DashboardNav } from "@/components/dashboard/dashboard-nav";
 import { DashboardNavLoader } from "@/components/dashboard/dashboard-nav-loader";
+import type { Metadata } from "next";
 import { Suspense } from "react";
+
+export const metadata: Metadata = {
+  title: {
+    template: "%s | PhishSim",
+    default: "Dashboard | PhishSim",
+  },
+};
 
 export default function DashboardLayout({
   children,

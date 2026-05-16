@@ -24,6 +24,8 @@ import {
   type CampaignTemplate,
 } from "@/lib/campaign-templates";
 import { Button } from "@/components/ui/button";
+import { FormError } from "@/components/ui/form-error";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -243,6 +245,16 @@ export function NewCampaignWizard() {
         <StepIndicator current={step} />
         <StepLabel step={step} />
 
+        {step === 1 && (
+          <Link
+            href="/dashboard/campaigns"
+            className="inline-block text-[13px] font-[500] mb-4 ds-interactive-link"
+            style={{ color: "var(--ds-link)" }}
+          >
+            Cancel
+          </Link>
+        )}
+
         {appliedBanner && step === 1 && (
           <p
             className="text-[13px] rounded-[8px] border px-4 py-3 mb-4"
@@ -258,12 +270,18 @@ export function NewCampaignWizard() {
 
         {step === 1 && (
           <div className="flex flex-col gap-6">
+            <ScenarioDraftPanel
+              onApply={({ templateId: id, difficulty, contentMode }) => {
+                applyPreset({ templateId: id, difficulty, contentMode });
+              }}
+            />
+            <TemplateGrid
+              selectedId={templateId}
+              channel={settings.channel}
+              onSelect={handleSelectTemplate}
+            />
             <div className="flex flex-col gap-3">
-              {error && (
-                <p className="text-[13px]" style={{ color: "var(--ds-error)" }}>
-                  {error}
-                </p>
-              )}
+              {error && <FormError>{error}</FormError>}
               <div className="flex justify-end">
                 <Button
                   type="button"
@@ -277,16 +295,6 @@ export function NewCampaignWizard() {
                 </Button>
               </div>
             </div>
-            <ScenarioDraftPanel
-              onApply={({ templateId: id, difficulty, contentMode }) => {
-                applyPreset({ templateId: id, difficulty, contentMode });
-              }}
-            />
-            <TemplateGrid
-              selectedId={templateId}
-              channel={settings.channel}
-              onSelect={handleSelectTemplate}
-            />
           </div>
         )}
 

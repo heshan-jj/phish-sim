@@ -52,6 +52,49 @@ export function listPlatformLogs(
   return logs.filter((row) => row.level === level);
 }
 
+export function getPlatformLogCounts(): Record<PlatformLogLevel, number> {
+  const logs = store();
+  let info = 0;
+  let warning = 0;
+  let error = 0;
+  for (const row of logs) {
+    if (row.level === "INFO") info += 1;
+    else if (row.level === "WARNING") warning += 1;
+    else error += 1;
+  }
+  return { INFO: info, WARNING: warning, ERROR: error };
+}
+
+export function getPlatformLogSources(): string[] {
+  const sources = new Set<string>();
+  for (const row of store()) {
+    sources.add(row.source);
+  }
+  return [...sources].sort();
+}
+
+export function clearPlatformLogs(): void {
+  const logs = store();
+  logs.length = 0;
+}
+
+export function importDockerLogText(text: string): number {
+  const lines = text.split(/\r?\n/);
+  let imported = 0;
+  for (const line of lines) {
+    const row = parseDockerLogLine(line);
+    if (!row) continue;
+    appendPlatformLog({
+      level: row.level,
+      source: row.source,
+      message: row.message,
+      timestamp: row.timestamp,
+    });
+    imported += 1;
+  }
+  return imported;
+}
+
 export function inferLogLevel(
   message: string,
   options?: { httpOk?: boolean },

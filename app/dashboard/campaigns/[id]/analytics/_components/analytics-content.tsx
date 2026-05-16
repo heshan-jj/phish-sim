@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getCampaignAnalytics } from "@/lib/db/queries/analytics";
 import { Card } from "@/components/ui/card";
-import { ArrowUpRight, ArrowDownRight, Minus, Trophy } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, ArrowDownRight, Minus, Trophy } from "lucide-react";
 import { DepartmentChart } from "./department-chart";
 import { TimelineChart } from "./timeline-chart";
 import { EmployeeTable } from "./employee-table";
@@ -178,6 +178,14 @@ export async function AnalyticsContent({ campaignId }: Props) {
       {/* Page header */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
+          <Link
+            href="/dashboard/campaigns"
+            className="inline-flex items-center gap-1.5 text-[13px] font-[500] mb-4 ds-interactive-link"
+            style={{ color: "var(--ds-link)" }}
+          >
+            <ArrowLeft className="size-3.5" />
+            Back to campaigns
+          </Link>
           <h1
             className="text-[28px] font-[600] leading-[1.25] mb-1"
             style={{ color: "var(--ds-ink)" }}
@@ -203,7 +211,7 @@ export async function AnalyticsContent({ campaignId }: Props) {
       </div>
 
       {/* Stat cards row */}
-      <div className="grid gap-4 grid-cols-2 lg:grid-cols-5">
+      <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
         <StatCard label="Total Sent" value={totalSent.toLocaleString()} />
         <StatCard
           label="Open Rate"
@@ -234,6 +242,9 @@ export async function AnalyticsContent({ campaignId }: Props) {
           numericValue={reportRate}
         />
       </div>
+      <p className="text-[12px] -mt-4" style={{ color: "var(--ds-steel)" }}>
+        Green = favorable for security; red = unfavorable.
+      </p>
 
       {/* Charts row */}
       <div className="grid gap-6 lg:grid-cols-2">

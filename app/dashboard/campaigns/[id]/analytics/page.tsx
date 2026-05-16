@@ -1,4 +1,9 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
+
+export const metadata: Metadata = {
+  title: "Campaign analytics",
+};
 import { AnalyticsContent } from "./_components/analytics-content";
 import { AnalyticsSkeleton } from "./_components/analytics-skeleton";
 

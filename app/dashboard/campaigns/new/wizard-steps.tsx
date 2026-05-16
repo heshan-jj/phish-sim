@@ -17,6 +17,7 @@ export function StepIndicator({ current }: { current: number }) {
           <div key={step} className="flex items-center">
             <div
               className="w-8 h-8 rounded-full flex items-center justify-center text-[13px] font-[600] transition-all duration-200"
+              aria-current={isActive ? "step" : undefined}
               style={{
                 backgroundColor: isActive
                   ? "var(--ds-primary)"

@@ -2,9 +2,9 @@
 
 import {
   CAMPAIGN_TEMPLATES,
-  type CampaignDifficulty,
   type CampaignTemplate,
 } from "@/lib/campaign-templates";
+import { DIFFICULTY_BADGE_CLASS } from "@/lib/ui/campaign-template-styles";
 import type { CampaignChannel } from "@/lib/campaign-settings";
 import { filterTemplatesByChannel } from "@/lib/campaign-channel";
 import { Badge } from "@/components/ui/badge";
@@ -50,12 +50,6 @@ const TAG_STYLES: Record<string, string> = {
   workflow: "bg-[var(--ds-tint-sky)] text-[#1a2a52]",
 };
 
-const DIFFICULTY_STYLES: Record<CampaignDifficulty, string> = {
-  Easy: "bg-[var(--ds-tint-mint)] text-[#1aae39]",
-  Medium: "bg-[var(--ds-tint-peach)] text-[#793400]",
-  Hard: "bg-[var(--ds-tint-lavender)] text-[#391c57]",
-};
-
 function tagStyle(tag: string) {
   return TAG_STYLES[tag] ?? "bg-muted text-muted-foreground";
 }
@@ -81,10 +75,10 @@ export function TemplateGrid({
           <Card
             key={template.id}
             className={cn(
-              "flex flex-col transition-all duration-200",
+              "flex flex-col transition-all duration-200 border-2",
               selected
-                ? "border-2 border-[var(--ds-primary)]"
-                : "hover:border-ds-hairline-strong hover:shadow-sm",
+                ? "border-[var(--ds-primary)] ring-2 ring-[var(--ds-primary)]"
+                : "border-transparent hover:border-ds-hairline-strong hover:shadow-sm",
             )}
           >
             <CardHeader className="pb-2">
@@ -95,7 +89,7 @@ export function TemplateGrid({
                 <Badge
                   className={cn(
                     "shrink-0 rounded-full border-0 text-[11px] font-semibold",
-                    DIFFICULTY_STYLES[template.difficulty],
+                    DIFFICULTY_BADGE_CLASS[template.difficulty],
                   )}
                 >
                   {template.difficulty}
