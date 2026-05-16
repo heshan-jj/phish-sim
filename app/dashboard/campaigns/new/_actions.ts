@@ -3,10 +3,7 @@
 import type { CampaignDifficulty } from "@/lib/campaign-templates";
 import type { CampaignSettings } from "@/lib/campaign-settings";
 import { db } from "@/lib/db";
-import {
-  getDepartmentsByOrg,
-  getEmployeesByOrg,
-} from "@/lib/db/queries/employees";
+import { getEmployeesByOrg } from "@/lib/db/queries/employees";
 import { campaigns } from "@/lib/db/schema";
 import { getOrgForUser } from "@/lib/org";
 import type { CampaignStatus } from "@/types";
@@ -26,10 +23,14 @@ export async function getTargetingOptions(): Promise<TargetingOptions | null> {
   const org = await getOrgForUser();
   if (!org) return null;
 
-  const [departments, employeesList] = await Promise.all([
-    getDepartmentsByOrg(org.id),
-    getEmployeesByOrg(org.id),
-  ]);
+  const employeesList = await getEmployeesByOrg(org.id);
+  const departments = [
+    ...new Set(
+      employeesList
+        .map((employee) => employee.department?.trim())
+        .filter((department): department is string => Boolean(department)),
+    ),
+  ].sort((a, b) => a.localeCompare(b));
 
   return { departments, employees: employeesList };
 }
