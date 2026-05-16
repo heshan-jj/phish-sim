@@ -1,4 +1,5 @@
 import {
+  campaignEmployees,
   campaignEventActionEnum,
   campaignEvents,
   campaignStatusEnum,
@@ -22,6 +23,10 @@ export type UpdateCampaign = Partial<NewCampaign>;
 export type CampaignEvent = typeof campaignEvents.$inferSelect;
 export type NewCampaignEvent = typeof campaignEvents.$inferInsert;
 export type UpdateCampaignEvent = Partial<NewCampaignEvent>;
+
+export type CampaignEmployee = typeof campaignEmployees.$inferSelect;
+export type NewCampaignEmployee = typeof campaignEmployees.$inferInsert;
+export type UpdateCampaignEmployee = Partial<NewCampaignEmployee>;
 
 export type CampaignStatus = (typeof campaignStatusEnum.enumValues)[number];
 export type CampaignEventAction =

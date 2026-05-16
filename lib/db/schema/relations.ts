@@ -1,4 +1,5 @@
 import { relations } from "drizzle-orm";
+import { campaignEmployees } from "./campaign-employees";
 import { campaignEvents } from "./campaign-events";
 import { campaigns } from "./campaigns";
 import { employees } from "./employees";
@@ -15,6 +16,7 @@ export const employeesRelations = relations(employees, ({ one, many }) => ({
     references: [organizations.id],
   }),
   campaignEvents: many(campaignEvents),
+  campaignEmployees: many(campaignEmployees),
 }));
 
 export const campaignsRelations = relations(campaigns, ({ one, many }) => ({
@@ -23,6 +25,7 @@ export const campaignsRelations = relations(campaigns, ({ one, many }) => ({
     references: [organizations.id],
   }),
   campaignEvents: many(campaignEvents),
+  campaignEmployees: many(campaignEmployees),
 }));
 
 export const campaignEventsRelations = relations(campaignEvents, ({ one }) => ({
@@ -32,6 +35,17 @@ export const campaignEventsRelations = relations(campaignEvents, ({ one }) => ({
   }),
   employee: one(employees, {
     fields: [campaignEvents.employeeId],
+    references: [employees.id],
+  }),
+}));
+
+export const campaignEmployeesRelations = relations(campaignEmployees, ({ one }) => ({
+  campaign: one(campaigns, {
+    fields: [campaignEmployees.campaignId],
+    references: [campaigns.id],
+  }),
+  employee: one(employees, {
+    fields: [campaignEmployees.employeeId],
     references: [employees.id],
   }),
 }));

@@ -26,7 +26,6 @@ function getDrizzleKitDatabaseUrl(): string {
 
 export default defineConfig({
   schema: "./lib/db/schema/index.ts",
-  out: "./drizzle",
   dialect: "postgresql",
   schemaFilter: ["public"],
   dbCredentials: {

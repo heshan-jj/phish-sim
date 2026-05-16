@@ -8,8 +8,6 @@
     "start": "next start",
     "lint": "eslint",
     "db:test": "node scripts/db-test.mjs",
-    "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "seed": "tsx scripts/seed.ts"
