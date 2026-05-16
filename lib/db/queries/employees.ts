@@ -1,4 +1,4 @@
-import { and, eq, isNotNull } from "drizzle-orm";
+import { and, asc, eq, isNotNull } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { employees } from "@/lib/db/schema";
 
@@ -10,6 +10,21 @@ export async function getEmployeeEmails(orgId?: string) {
   }
 
   return query;
+}
+
+export async function listEmployeesByOrg(orgId: string) {
+  return db
+    .select({
+      id: employees.id,
+      name: employees.name,
+      email: employees.email,
+      department: employees.department,
+      role: employees.role,
+      seniority: employees.seniority,
+    })
+    .from(employees)
+    .where(eq(employees.orgId, orgId))
+    .orderBy(asc(employees.name));
 }
 
 export async function getEmployeesByOrg(orgId: string) {

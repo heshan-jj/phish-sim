@@ -7,10 +7,9 @@ import {
   getDepartmentsByOrg,
   getEmployeesByOrg,
 } from "@/lib/db/queries/employees";
-import { campaigns, organizations } from "@/lib/db/schema";
+import { campaigns } from "@/lib/db/schema";
+import { getOrgForUser } from "@/lib/org";
 import type { CampaignStatus } from "@/types";
-import { createServerClient } from "@/lib/supabase/server";
-import { eq } from "drizzle-orm";
 
 import type { TargetingOptions } from "./types";
 
@@ -21,23 +20,6 @@ export interface CreateCampaignInput {
   status: CampaignStatus;
   schedule: Date | null;
   settings: CampaignSettings;
-}
-
-async function getOrgForUser() {
-  const supabase = await createServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) return null;
-
-  const [org] = await db
-    .select()
-    .from(organizations)
-    .where(eq(organizations.userId, user.id))
-    .limit(1);
-
-  return org ?? null;
 }
 
 export async function getTargetingOptions(): Promise<TargetingOptions | null> {
