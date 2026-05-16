@@ -112,13 +112,6 @@ function firstStringArray(source: JsonRecord | null, keys: string[]) {
   return null;
 }
 
-function parseCommaSeparated(value: string | undefined): string[] {
-  if (!value) return [];
-  return value
-    .split(",")
-    .map((item) => item.trim())
-    .filter(Boolean);
-}
 
 function isLoginVariant(value: string): value is LoginVariant {
   return value in DEFAULT_RED_FLAGS;
@@ -253,7 +246,7 @@ export default async function LoginSimulationPage({
 }) {
   noStore();
   const { campaignId, employeeToken } = await params;
-  const query = await searchParams;
+  await searchParams;
   const simulationData = await getSimulationData(campaignId, employeeToken);
 
   if (!simulationData) {

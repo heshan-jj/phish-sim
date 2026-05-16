@@ -18,7 +18,6 @@ import {
   KeyRound,
   TrendingDown,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import type { EmployeeScore, DepartmentScore } from "@/lib/db/queries/leaderboard";
 import type { RiskTier } from "@/lib/scoring";
 
