@@ -19,6 +19,13 @@ import type { CampaignEvent } from "@/types";
 
 export type { DepartmentScore };
 
+const TRANSIENT_DB_ERROR_CODES = new Set([
+  "ECONNRESET",
+  "ECONNREFUSED",
+  "ETIMEDOUT",
+  "EPIPE",
+]);
+
 /** Full per-employee leaderboard record, including action history and display helpers. */
 export type EmployeeScore = {
   employeeId: string;
@@ -65,7 +72,7 @@ export async function getLeaderboardData(
 export async function getCampaignLeaderboard(
   campaignId: string,
 ): Promise<LeaderboardData | null> {
-  const [campaignRows, empRows, eventRows] = await Promise.all([
+  const [campaignRows, empRows, eventRows] = await retryTransientRead(() => Promise.all([
     db.select().from(campaigns).where(eq(campaigns.id, campaignId)).limit(1),
 
     db
@@ -93,7 +100,7 @@ export async function getCampaignLeaderboard(
       .from(campaignEvents)
       .where(eq(campaignEvents.campaignId, campaignId))
       .orderBy(asc(campaignEvents.createdAt)),
-  ]);
+  ]));
 
   if (!campaignRows[0]) return null;
 
@@ -110,7 +117,7 @@ export async function getCampaignLeaderboard(
   const employeeScores: EmployeeScore[] = empRows.map((emp) => {
     const evts = eventsByEmployee.get(emp.employeeId) ?? [];
     const score = calculateRiskScore(evts);
-    const tier = getRiskTier(score);
+    const tier = getRiskTier(score, evts);
 
     const sentEvt = evts.find((e) => e.action === "sent");
     const firstAction = evts.find((e) => e.action !== "sent");
@@ -187,4 +194,40 @@ export async function getCampaignLeaderboard(
     departments: departmentScores,
     departmentScores,
   };
+}
+
+async function retryTransientRead<T>(
+  operation: () => Promise<T>,
+  attempt = 0,
+): Promise<T> {
+  try {
+    return await operation();
+  } catch (error) {
+    if (attempt > 0 || !isTransientDbError(error)) {
+      throw error;
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    return retryTransientRead(operation, attempt + 1);
+  }
+}
+
+function isTransientDbError(error: unknown): boolean {
+  const code = readErrorCode(error);
+  return code ? TRANSIENT_DB_ERROR_CODES.has(code) : false;
+}
+
+function readErrorCode(error: unknown): string | undefined {
+  if (!error || typeof error !== "object") return undefined;
+
+  const direct = "code" in error ? error.code : undefined;
+  if (typeof direct === "string") return direct;
+
+  const cause = "cause" in error ? error.cause : undefined;
+  if (cause && typeof cause === "object" && "code" in cause) {
+    const causeCode = cause.code;
+    if (typeof causeCode === "string") return causeCode;
+  }
+
+  return undefined;
 }

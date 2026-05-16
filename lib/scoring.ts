@@ -18,6 +18,13 @@ const PENALTY_CREDENTIAL = 50;
 const BONUS_REPORTED = 25;
 const PENALTY_CALL_AND_CREDENTIAL = 10;
 
+function hasCredentialFailure(actions: Set<string>): boolean {
+  return (
+    actions.has("credential_attempted") ||
+    actions.has("credentials_submitted")
+  );
+}
+
 /**
  * Computes a 0–100 security awareness score from campaign events.
  * Higher is better. Reported adds +25 before the final cap at 100.
@@ -29,19 +36,25 @@ export function calculateRiskScore(events: CampaignEvent[]): number {
 
   if (actions.has("email_opened")) score -= PENALTY_EMAIL_OPENED;
   if (actions.has("link_clicked")) score -= PENALTY_LINK_CLICKED;
-  if (actions.has("credential_attempted")) score -= PENALTY_CREDENTIAL;
+  if (hasCredentialFailure(actions)) score -= PENALTY_CREDENTIAL;
   if (actions.has("reported")) score += BONUS_REPORTED;
-  if (actions.has("call_answered") && actions.has("credential_attempted")) {
+  if (actions.has("call_answered") && hasCredentialFailure(actions)) {
     score -= PENALTY_CALL_AND_CREDENTIAL;
   }
 
   return Math.max(0, Math.min(100, score));
 }
 
-export function getRiskTier(score: number): RiskTier {
-  if (score >= 75) return "champion";
-  if (score >= 40) return "at-risk";
-  return "compromised";
+export function getRiskTier(score: number, events?: CampaignEvent[]): RiskTier {
+  const scoreTier =
+    score >= 75 ? "champion" : score >= 40 ? "at-risk" : "compromised";
+  const actions = events ? new Set(events.map((e) => e.action)) : null;
+
+  if (actions && hasCredentialFailure(actions) && scoreTier === "champion") {
+    return "at-risk";
+  }
+
+  return scoreTier;
 }
 
 export function getRiskTierLabel(tier: RiskTier): string {
@@ -68,11 +81,7 @@ function groupEventsByEmployee(
 }
 
 function isCompromised(events: CampaignEvent[]): boolean {
-  return events.some(
-    (e) =>
-      e.action === "credential_attempted" ||
-      e.action === "credentials_submitted",
-  );
+  return hasCredentialFailure(new Set(events.map((e) => e.action)));
 }
 
 function isReported(events: CampaignEvent[]): boolean {
