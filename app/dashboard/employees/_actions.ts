@@ -1,41 +1,17 @@
 "use server";
 
-import { getEmployeeEmails, listEmployeesByOrg } from "@/lib/db/queries/employees";
+import {
+  deleteEmployeeForOrg,
+  emailExistsForOrg,
+  getEmployeeEmails,
+  listEmployeesByOrg,
+  updateEmployeeForOrg,
+} from "@/lib/db/queries/employees";
 import { getOrgForUser } from "@/lib/org";
 import {
   createServerClient,
   createServiceRoleClient,
 } from "@/lib/supabase/server";
-
-/**
- * Deletes a single employee by ID. Verifies the employee belongs to the
- * current user's organisation before deleting.
- */
-export async function deleteEmployee(employeeId: string): Promise<{ error?: string }> {
-  const org = await getOrgForUser();
-  if (!org) return { error: "Unauthenticated" };
-
-  const supabase = createServiceRoleClient() ?? (await createServerClient());
-
-  const { data: employee, error: fetchError } = await supabase
-    .from("employees")
-    .select("id")
-    .eq("id", employeeId)
-    .eq("org_id", org.id)
-    .maybeSingle();
-
-  if (fetchError) return { error: fetchError.message };
-  if (!employee) return { error: "Employee not found" };
-
-  const { error } = await supabase
-    .from("employees")
-    .delete()
-    .eq("id", employeeId)
-    .eq("org_id", org.id);
-
-  if (error) return { error: error.message };
-  return {};
-}
 
 /**
  * Deletes ALL employees belonging to the current user's organisation.
@@ -69,6 +45,22 @@ export interface ImportEmployeesResult {
   duplicateEmails: string[];
   error?: string;
 }
+
+export interface EmployeeFormPayload {
+  name: string;
+  email: string;
+  department?: string | null;
+  role?: string | null;
+  seniority?: string | null;
+}
+
+export type UpdateEmployeeResult =
+  | { ok: true }
+  | { ok: false; error: string };
+
+export type DeleteEmployeeResult =
+  | { ok: true }
+  | { ok: false; error: string };
 
 function deriveDepartments(
   employees: Awaited<ReturnType<typeof listEmployeesByOrg>>,
@@ -210,4 +202,110 @@ export async function importEmployees(
     skipped: duplicateEmails.length,
     duplicateEmails,
   };
+}
+
+function normalizeOptionalField(value: string | null | undefined) {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : null;
+}
+
+function buildEmployeePayload(payload: EmployeeFormPayload) {
+  return {
+    name: payload.name.trim(),
+    email: normalizeEmail(payload.email),
+    department: normalizeOptionalField(payload.department),
+    role: normalizeOptionalField(payload.role),
+    seniority: normalizeOptionalField(payload.seniority),
+  };
+}
+
+function validateEmployeePayload(payload: EmployeeFormPayload) {
+  const name = payload.name.trim();
+  const email = normalizeEmail(payload.email);
+
+  if (!name) {
+    return { ok: false as const, error: "Name is required." };
+  }
+  if (!email) {
+    return { ok: false as const, error: "Email is required." };
+  }
+
+  return {
+    ok: true as const,
+    data: buildEmployeePayload(payload),
+  };
+}
+
+export async function updateEmployee(
+  employeeId: string,
+  payload: EmployeeFormPayload,
+): Promise<UpdateEmployeeResult> {
+  const org = await getOrgForUser();
+  if (!org) {
+    return { ok: false, error: "Unauthenticated" };
+  }
+
+  const validated = validateEmployeePayload(payload);
+  if (!validated.ok) {
+    return validated;
+  }
+
+  const duplicate = await emailExistsForOrg(
+    org.id,
+    validated.data.email,
+    employeeId,
+  );
+  if (duplicate) {
+    return {
+      ok: false,
+      error: "Another employee already uses this email.",
+    };
+  }
+
+  try {
+    const updated = await updateEmployeeForOrg(
+      org.id,
+      employeeId,
+      validated.data,
+    );
+
+    if (!updated) {
+      return { ok: false, error: "Employee not found." };
+    }
+
+    return { ok: true };
+  } catch (err) {
+    const code =
+      err &&
+      typeof err === "object" &&
+      "code" in err &&
+      typeof err.code === "string"
+        ? err.code
+        : "";
+
+    if (code === "23505") {
+      return {
+        ok: false,
+        error: "Another employee already uses this email.",
+      };
+    }
+
+    return { ok: false, error: "Failed to update employee." };
+  }
+}
+
+export async function deleteEmployee(
+  employeeId: string,
+): Promise<DeleteEmployeeResult> {
+  const org = await getOrgForUser();
+  if (!org) {
+    return { ok: false, error: "Unauthenticated" };
+  }
+
+  const deleted = await deleteEmployeeForOrg(org.id, employeeId);
+  if (!deleted) {
+    return { ok: false, error: "Employee not found." };
+  }
+
+  return { ok: true };
 }
