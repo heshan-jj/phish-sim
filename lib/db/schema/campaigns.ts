@@ -1,4 +1,4 @@
-import { index, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { index, jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { campaignStatusEnum } from "./enums";
 import { organizations } from "./organizations";
 
@@ -14,6 +14,7 @@ export const campaigns = pgTable(
     difficulty: text("difficulty").notNull(),
     status: campaignStatusEnum("status").notNull().default("draft"),
     schedule: timestamp("schedule", { withTimezone: true }),
+    settings: jsonb("settings"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
