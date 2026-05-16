@@ -30,6 +30,13 @@ export async function saveContext(orgId: string, context: OrgContext) {
     .where(eq(organizations.id, orgId));
 }
 
+export async function markOnboardingComplete(orgId: string) {
+  await db
+    .update(organizations)
+    .set({ onboardingCompletedAt: new Date() })
+    .where(eq(organizations.id, orgId));
+}
+
 export async function getOrgForUser() {
   const supabase = await createServerClient();
 
@@ -73,4 +80,9 @@ export async function ensureOrgForUser(defaultName = "My Organization") {
   } catch {
     return getOrgForUser();
   }
+}
+
+export async function isCurrentUserOnboarded() {
+  const org = await getOrgForUser();
+  return Boolean(org?.onboardingCompletedAt);
 }

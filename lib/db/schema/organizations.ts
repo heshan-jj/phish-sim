@@ -7,6 +7,9 @@ export const organizations = pgTable("organizations", {
   industry: text("industry"),
   logoUrl: text("logo_url"),
   context: jsonb("context"),
+  onboardingCompletedAt: timestamp("onboarding_completed_at", {
+    withTimezone: true,
+  }),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

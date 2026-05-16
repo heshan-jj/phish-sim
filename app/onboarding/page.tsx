@@ -2,6 +2,7 @@
 
 import {
   ensureOrgForUser,
+  markOnboardingComplete,
   saveContext,
   saveStep1,
   type OrgContext,
@@ -226,9 +227,22 @@ export default function OnboardingPage() {
     }
   }
 
-  function handleFinish() {
-    router.push("/dashboard");
-    router.refresh();
+  async function handleFinish() {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const id = await resolveOrgId();
+      if (!id) return;
+
+      await markOnboardingComplete(id);
+      router.push("/dashboard");
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -602,14 +616,24 @@ export default function OnboardingPage() {
                 Back
               </button>
               <Button
-                onClick={handleFinish}
+                onClick={() => void handleFinish()}
+                disabled={loading}
                 className="flex-1 h-11 rounded-[8px] text-[14px] font-[500]"
                 style={{
-                  backgroundColor: "var(--ds-primary)",
-                  color: "#ffffff",
+                  backgroundColor: loading
+                    ? "var(--ds-hairline)"
+                    : "var(--ds-primary)",
+                  color: loading ? "var(--ds-muted)" : "#ffffff",
                 }}
               >
-                Go to Dashboard
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Finishing setup…
+                  </>
+                ) : (
+                  "Go to Dashboard"
+                )}
               </Button>
             </div>
           </div>

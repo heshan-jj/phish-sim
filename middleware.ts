@@ -39,11 +39,12 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // Redirect authenticated users away from auth pages
+  // Redirect authenticated users away from auth pages.
+  // Final destination is resolved server-side in /auth/post-login.
   if ((pathname === "/login" || pathname === "/signup") && user) {
-    const dashboardUrl = request.nextUrl.clone();
-    dashboardUrl.pathname = "/dashboard";
-    return NextResponse.redirect(dashboardUrl);
+    const postLoginUrl = request.nextUrl.clone();
+    postLoginUrl.pathname = "/auth/post-login";
+    return NextResponse.redirect(postLoginUrl);
   }
 
   if (pathname.startsWith("/onboarding") && !user) {

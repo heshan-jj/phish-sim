@@ -34,7 +34,7 @@ export default function LoginPage() {
       return;
     }
 
-    router.push("/dashboard");
+    router.replace("/auth/post-login");
     router.refresh();
   }
 
