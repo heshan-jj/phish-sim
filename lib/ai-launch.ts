@@ -11,6 +11,7 @@ import { buildGenerationInput, type EmployeeForGeneration } from "@/lib/generati
 import {
   personalizeText,
   renderCampaignEmail,
+  renderGeneratedCampaignEmail,
 } from "@/lib/campaign-templates";
 import type { OrgContext } from "@/app/onboarding/_actions";
 import { assertAiConfigured } from "@/lib/ai";
@@ -132,9 +133,18 @@ export async function resolvePhishingEmailContent(
       // keep template red flags
     }
 
-    return {
+    const body = renderGeneratedCampaignEmail({
+      template,
+      placeholders,
+      actionUrl,
+      variation,
       subject: email.subject,
       body: email.body,
+    });
+
+    return {
+      subject: email.subject,
+      body,
       senderName: email.senderName,
       senderEmail: email.senderEmail,
       redFlags,

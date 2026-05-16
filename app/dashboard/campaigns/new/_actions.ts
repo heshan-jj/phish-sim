@@ -1,7 +1,10 @@
 "use server";
 
 import type { CampaignDifficulty } from "@/lib/campaign-templates";
-import { getTemplateById } from "@/lib/campaign-templates";
+import {
+  getTemplateById,
+  pickTemplateVariation,
+} from "@/lib/campaign-templates";
 import type { CampaignSettings, ContentMode } from "@/lib/campaign-settings";
 import { db } from "@/lib/db";
 import {
@@ -11,10 +14,8 @@ import {
 import { campaigns } from "@/lib/db/schema";
 import { getOrgForUser } from "@/lib/org";
 import type { CampaignStatus } from "@/types";
-import { buildGenerationInput } from "@/lib/generation-input";
 import { parseOrgContext } from "@/lib/org-context";
-import { generatePhishingEmail } from "@/lib/ai";
-import { generateHybridPhishingEmail } from "@/lib/ai-extended";
+import { resolvePhishingEmailContent } from "@/lib/ai-launch";
 import { reviewContentSafety } from "@/lib/ai-content";
 import type { PhishingEmail } from "@/lib/ai";
 
@@ -95,7 +96,11 @@ export async function previewCampaignEmail(input: {
     throw new Error("Add at least one employee to preview AI content");
   }
 
-  const genInput = buildGenerationInput({
+  const nameParts = employee.name.trim().split(/\s+/).filter(Boolean);
+  const variation = pickTemplateVariation(template);
+  const resolved = await resolvePhishingEmailContent({
+    contentMode: input.contentMode,
+    template,
     employee: {
       name: employee.name,
       role: employee.role,
@@ -103,18 +108,26 @@ export async function previewCampaignEmail(input: {
       seniority: employee.seniority,
     },
     orgContext: parseOrgContext(org.context),
-    template,
     campaignDifficulty: input.difficulty,
+    placeholders: {
+      firstName: nameParts[0] ?? "there",
+      lastName: nameParts.slice(1).join(" "),
+      department: employee.department ?? "General",
+      employeeId: employee.id,
+      employeeEmail: employee.email,
+      companyName: org.name,
+      variation,
+    },
+    actionUrl: "https://training.example/verify",
+    variation,
   });
 
-  if (input.contentMode === "hybrid") {
-    return generateHybridPhishingEmail(
-      genInput,
-      template,
-      "https://training.example/verify",
-    );
-  }
-  return generatePhishingEmail(genInput);
+  return {
+    subject: resolved.subject,
+    body: resolved.body,
+    senderName: resolved.senderName,
+    senderEmail: resolved.senderEmail,
+  };
 }
 
 export async function suggestScenarioDraftAction(description: string) {

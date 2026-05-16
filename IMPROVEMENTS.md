@@ -1,78 +1,75 @@
 # 🚀 Suggested Improvements
 
-> Audit Date: 2026-05-16
+> Audit Date: 2026-05-17
 > Project: phish-sim
 
 ---
 
 ## Code Quality
 
-- **Centralise auth + org resolution into a single helper** — `getOrgForUser` is duplicated across `lib/org.ts` and `app/onboarding/_actions.ts`, and inlined ad-hoc in every API route (`db.select...from organizations.where(userId)`). Extract a single `requireOrgForRequest()` helper that resolves the user + org and throws/returns a standard 401/404 response. Every route and server action should call this instead of repeating the same 10 lines.
+- **Consolidate AI module boundary** — `lib/ai.ts`, `lib/ai-extended.ts`, `lib/ai-launch.ts` all contain related logic spread across three files with separate `SYSTEM_PROMPT` constants that are identical. Extract a shared `lib/ai/index.ts` barrel with a single system prompt constant, `callMinimax`, and `generateWithRetry`, then re-export specialised generators from sub-modules. This eliminates the duplicated constant and makes the AI surface area clearer.
 
-- **Replace the `unknown`-cast JSON metadata pattern with Zod schemas** — `campaign_events.metadata` is accessed everywhere via `isJsonRecord()` chains and string-key lookups (`pickString`, `firstString`). This is fragile and hard to maintain. Define a Zod schema for the metadata shape (e.g. `CampaignEventMetadata`) and parse at the boundary once — in the server component or API handler — so the rest of the code is fully typed.
+- **`findFirstJsonObject` is a hand-rolled JSON scanner** — `lib/ai.ts:140`
+  The brace-counting parser will silently truncate nested objects that contain unbalanced braces inside string values with escaped characters. Consider using a battle-tested streaming JSON parser (e.g. `partial-json` or `jsonrepair`) for the fallback path, or validate by round-tripping through `JSON.stringify` after parsing.
 
-- **`CampaignDifficulty` type uses title-case (`"Easy"`, `"Medium"`, `"Hard"`) inconsistently with DB values** — Standardise difficulty as a lower-case enum across templates, DB schema, and API. Update `campaign-templates.ts` and the `<Select>` option values to match.
+- **`runWithConcurrency` is defined but the launch route does not use it** — `lib/ai-launch.ts`
+  The concurrency-limiting helper is exported but the main `POST` handler in the launch route uses `Promise.all` within each batch unconditionally. Wire up `runWithConcurrency` with `AI_CONCURRENCY` for the per-recipient AI generation calls inside the batch loop, otherwise concurrent AI calls will exceed the configured limit.
 
-- **`lib/supabase/server.ts` exports both `createServerClient` and `createServiceRoleClient` but usage is inconsistent** — Several places do `const svc = createServiceRoleClient(); const client = svc ?? supabase` which silently falls back to the anon client if the service role key is missing. This can cause silent permission errors in production. Make `createServiceRoleClient()` throw if `SUPABASE_SERVICE_ROLE_KEY` is not set, or document clearly when anon fallback is intentional.
+- **`campaign-send` route should be removed or replaced** — `app/api/campaigns/[id]/send/route.ts`
+  The route is a stub that does nothing. Dead API surface in a security product creates confusion and risk. If it serves a future purpose, document it with a `// TODO` and return `501 Not Implemented`; otherwise delete it.
 
-- **`campaign-templates.ts` not audited** — The template definitions (categories, default difficulties, titles) were not read in this audit. Ensure template IDs match the `resolveLoginVariant()` string mappings in `login/page.tsx` — if a template ID is added without updating that function, users will always land on the `microsoft365` variant.
+- **`getOrgForUser` uses `cache()` from React** — `lib/org.ts`
+  React's `cache()` deduplicates calls within a single render pass, which is correct for Server Components. However, it is imported from `"react"` — make sure the function is never called from client components or API route handlers where the cache boundary doesn't apply. Consider adding a runtime guard or moving org lookup into a dedicated server-only module (`"server-only"` package).
 
 ---
 
 ## Performance
 
-- **N+1 DB queries in `inbox/[token]/page.tsx`** — `getInboxMessage` fetches the event first, then fires two parallel queries for employee + campaign. This is acceptable, but if inbox ever shows multiple messages, it will become a serious N+1. Structure is fine for now; add a comment noting the limitation.
+- **No pagination on employee queries** — `lib/db/queries/employees`
+  `listEmployeesByOrg` and `getEmployeesByOrg` appear to return all employees without a limit. For organisations with thousands of employees, this will load the entire table into memory on every launch. Add pagination or streaming for the launch batch loop.
 
-- **`getDashboardStats` makes 3 separate DB round-trips** — `lib/db/queries/dashboard.ts` runs an employee count query, a campaign status query, and then calls `listCampaignsByOrg` (a fourth query). These can be collapsed into 2 queries using `count()` with `groupBy` for campaign statuses, reducing round-trips by 50%.
+- **Tracking pixel resolution scans up to 100 rows** — `app/api/track/route.ts:resolveTrackingContext`
+  The token resolution query uses `.contains("metadata", { token })` on the `campaign_events` table and limits to 100 rows. As the events table grows this JSONB containment query will become slow. Add a dedicated `token` column (indexed) to `campaign_events`, or store a separate `campaign_sends` table with `(token, campaign_id, employee_id)` as a fast lookup index.
 
-- **`resolveTrackingContext` is called twice per `GET /api/track` request** — Once directly in the `GET` handler and again inside `insertEvent`. This results in 2 identical DB lookups per tracking pixel load. Extract the context resolution before calling `insertEvent` and pass it in.
-
-- **No pagination on employee lists** — `listEmployeesByOrg` and `getEmployeesByOrg` return all employees with no limit. For orgs with thousands of employees, this will load the entire table into memory. Add cursor-based pagination and a search filter for the `EmployeeMultiSelect` component.
+- **`nextImmediateScheduledAt` mutation in concurrent `Promise.all`** — `app/api/campaigns/[id]/launch/route.ts`
+  The stagger logic mutates `nextImmediateScheduledAt` inside `batch.map(async ...)`, which runs concurrently via `Promise.all`. Multiple async tasks may read and overwrite the same date simultaneously, producing incorrect schedules. Move the stagger computation outside the async lambda or use a sequential loop for that code path.
 
 ---
 
 ## Security
 
-- **`dangerouslySetInnerHTML` with DOMPurify is correct, but verify CSP is set** — `inbox-client.tsx` uses DOMPurify correctly with `USE_PROFILES: { html: true }`. However, without a strict `Content-Security-Policy` header (especially `script-src`), a stored XSS in the AI-generated email body that slips past DOMPurify would execute. Add a tight CSP in `next.config.ts` with `script-src 'self'`.
+- **Content Security Policy uses `unsafe-inline` and `unsafe-eval`** — `next.config.ts`
+  The CSP allows `'unsafe-inline'` and `'unsafe-eval'` in `script-src`. These directives negate most XSS protection CSP provides. Migrate to nonce-based CSP (Next.js supports this natively) and remove `'unsafe-eval'` unless required by a specific dependency. Also, the `connect-src 'self' https:` rule allows connections to any HTTPS origin — tighten to specific hosts (Supabase, MiniMax, Resend domains).
 
-- **Tracking tokens are UUIDs in query strings — consider HMAC-signed tokens** — UUIDs are random enough to prevent guessing, but they are visible in email headers, server logs, and forwarded messages. An HMAC-signed token (e.g. `base64(campaignId + employeeId + hmac)`) would allow token verification without a DB lookup and would bind the token to a specific employee, preventing token reuse across campaigns.
+- **No rate limiting on `/api/generate` or `/api/campaigns/[id]/launch`** — these routes call the MiniMax API per recipient. A single authenticated user could trigger thousands of AI API calls (and cost) by launching a large campaign or hammering the generate endpoint. Add per-user rate limiting (e.g. Upstash Redis or a simple in-memory window for low traffic) and a max-recipient cap at the API layer.
 
-- **No CSRF protection on POST `/api/track`** — The endpoint accepts unauthenticated POST requests. While this is necessary for the tracking pixel flow, it should at minimum check `Content-Type: application/json` and reject other content types to prevent form-based CSRF from third-party sites inflating stats.
+- **`normalizeRedirect` allows any `https:` URL** — `app/api/track/route.ts:normalizeRedirect`
+  The open-redirect validator only rejects non-http(s) protocols. A phishing link that points to `https://evil.com` will be tracked and then redirected. For a phishing *simulation* product this is intentional (the attacker URL is the point), but the internal tracking pixel redirect to the login page should use an allow-list of your own origins to prevent the tracking endpoint from being abused as a general-purpose open redirector.
 
-- **Resend `from` address defaults to a literal placeholder** — `DEFAULT_FROM_EMAIL = "security@yourdomain.com"` in `launch/route.ts`. If `RESEND_FROM_EMAIL` is not set, Resend will reject every send with a domain verification error, but the error message is opaque. Add a startup check that throws clearly if neither `RESEND_FROM_EMAIL` nor a verified domain is configured.
+- **`smishingToEmailHtml` builds HTML by string interpolation** — `lib/ai-launch.ts`
+  Addressed in FIXES.md but worth also noting as a security concern — stored AI-generated HTML sent via Resend runs in the recipient's email client. DOMPurify should be applied before inserting `message` into the HTML template.
 
-- **`upload-logo` stores logos at a predictable path `{userId}/logo.{ext}`** — The public URL is deterministic. Any user who knows another user's UUID (e.g. from a leaked JWT) can directly access their logo. This is low severity since logos are not sensitive, but consider using a non-guessable path like `{userId}/{randomUUID}.{ext}`.
+- **No CSRF protection on POST API routes** — API routes under `app/api/` rely on the Supabase session cookie for authentication but have no CSRF token check. Next.js App Router is not automatically CSRF-safe for cookie-authenticated routes. Add `SameSite=Strict` (or `Lax`) to the auth cookie (check Supabase SSR defaults) or add a custom header check (`x-requested-with`) for mutation endpoints.
 
 ---
 
 ## Testing
 
-- **Zero test files found** — The project has no unit tests, integration tests, or end-to-end tests. Priority areas to cover first:
-  1. `lib/ai.ts` — `extractJson` and `findFirstJsonObject` are complex parsing logic with edge cases; unit test these with malformed AI responses.
-  2. `app/api/track/route.ts` — The `sanitizeCredentialMetadata` function strips passwords; test that it behaves correctly with missing/malformed input.
-  3. `app/api/campaigns/[id]/launch/route.ts` — The stagger/schedule logic is the source of the original bug; test all combinations of `sendImmediately` × `staggerSends` × `campaign.schedule`.
-  4. `middleware.ts` — Route protection logic should be tested with mock requests for each protected path.
+- **Test suite covers only two modules with four test cases total** — `lib/__tests__/`
+  `scoring.test.ts` has good coverage of the scoring logic but `ai.test.ts` was not scanned (skipped by the test script). Critical paths with zero tests include: the tracking event pipeline, campaign launch batching, middleware auth logic, and all API route handlers. Prioritise adding tests for the tracking deduplication guards (compromised gate, flood protection) as these directly affect data integrity.
 
-- **No CI/CD pipeline configuration found** — Add a GitHub Actions workflow (`.github/workflows/ci.yml`) that runs `next build`, `eslint`, and tests on every PR.
+- **No integration or E2E tests** — no Playwright or Cypress configuration found. For a product that sends real emails and tracks user behaviour, an E2E smoke test (mock Resend → send → track open → track click → assert event rows) would catch regressions in the most important user flows.
+
+- **`scoring.test.ts` missing edge cases** — the test for "opened + clicked + reported + credentials_submitted → 50" coincidentally passes for the right reason, but there is no test for the `call_answered` + no credential path (should be no penalty), or for the 0/100 score boundary clipping.
 
 ---
 
 ## Documentation
 
-- **README.md is present but content not audited** — Verify it covers: local setup (env vars required), database migration steps (`db:push` vs `db:migrate`), Resend domain verification requirements, and how to run the seed script.
+- **`README.md` references `DATABASE_URL` setup but not `DATABASE_URL_MIGRATE` / `DATABASE_URL_DIRECT`** — the `drizzle.config.ts` has sophisticated fallback logic for three different URL variables, but the README only documents `DATABASE_URL`. Add a section explaining when to use each variable (pooled vs. direct connection).
 
-- **Missing ADR (Architecture Decision Record) for Supabase + Drizzle dual-client pattern** — The project uses both the Supabase JS client (for auth and storage) and Drizzle ORM (for data queries) against the same PostgreSQL database. This is a deliberate architectural choice but it is undocumented. New contributors will be confused about which client to use when. Add a short note in the README or a `docs/architecture.md`.
+- **`DESIGN.md` is 35 KB** — this is the largest source file in the project. Its contents were not audited, but if it documents system architecture, consider splitting it into a `docs/` folder with per-topic files for easier navigation.
 
-- **`DESIGN.md` exists but was not audited** — Ensure it is up to date, especially around the inbox simulation and login simulation flows which appear to have been added after initial design.
+- **No `.env.local` validation at startup** — missing required environment variables (e.g. `RESEND_API_KEY`) are only discovered at runtime when the first campaign is launched. Add a startup validation step (e.g. a `scripts/check-env.ts` or using the `@t3-oss/env-nextjs` package) that checks all required variables and fails fast with a clear error.
 
-- **No JSDoc on exported functions in `lib/`** — Public functions like `generatePhishingEmail`, `getOrgForUser`, `listEmployeesByOrg` have no documentation comments. Add JSDoc to at minimum describe the parameters, return value, and any notable side effects (e.g. DB writes).
-
----
-
-## Accessibility
-
-- **`InboxClient` sidebar navigation buttons have no `aria-current`** — The "Inbox" button in `inbox-client.tsx` is visually active (blue background) but has no `aria-current="page"` attribute. Screen readers cannot identify the current section.
-
-- **Login simulation form inputs lack `<label>` elements** — `login-simulation-client.tsx` uses bare `<input>` elements with `placeholder` only. Placeholder text is not a substitute for labels. Add `<label htmlFor="...">` elements (can be visually hidden) for each input.
-
-- **`LoginSimulationClient` modal uses a custom `div` overlay instead of a `<dialog>` or a focus-trapped component** — The "This was a phishing simulation" modal (`showModal`) does not trap focus or restore focus on close. Users navigating by keyboard can tab behind the modal. Replace with a proper dialog component (the project already has `@/components/ui/dialog` used in `inbox-client.tsx`) for consistent, accessible behaviour.
+- **`sample-employees.csv` lacks a header row comment** — the CSV is useful for onboarding, but there is no documentation of what the expected columns are or how seniority/department values are used by the system. Add a note in the README linking to the file and explaining the format.

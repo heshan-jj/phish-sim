@@ -57,6 +57,13 @@ export interface RenderCampaignEmailInput {
   variation?: string;
 }
 
+export interface RenderGeneratedCampaignEmailInput
+  extends RenderCampaignEmailInput {
+  subject: string;
+  body: string;
+  preheader?: string;
+}
+
 const PERSONALIZATION_FIELDS = [
   "{{firstName}}",
   "{{lastName}}",
@@ -552,26 +559,25 @@ function renderBodyParagraphs(body: string, placeholders: Record<string, string>
     .join("");
 }
 
-export function renderCampaignEmail({
-  template,
-  placeholders,
+function renderEmailShell({
+  subject,
+  preheader,
+  bodyHtml,
+  buttonText,
+  buttonColor,
   actionUrl,
-  variation,
-}: RenderCampaignEmailInput) {
-  const mergedPlaceholders: Record<string, string> = {
-    ...placeholders,
-    variation: variation ?? template.contentVariations[0] ?? "",
-  };
-  const subject = escapeHtml(personalizeText(template.subject, mergedPlaceholders));
-  const preheader = escapeHtml(
-    personalizeText(template.preheader, mergedPlaceholders),
-  );
-  const body = renderBodyParagraphs(template.body, mergedPlaceholders);
-  const buttonText = escapeHtml(template.buttonText);
-  const buttonColor = escapeAttribute(template.buttonColor);
-  const href = escapeAttribute(actionUrl);
-  const companyName = escapeHtml(mergedPlaceholders.companyName ?? "your company");
-
+  companyName,
+  employeeEmail,
+}: {
+  subject: string;
+  preheader: string;
+  bodyHtml: string;
+  buttonText: string;
+  buttonColor: string;
+  actionUrl: string;
+  companyName: string;
+  employeeEmail: string;
+}) {
   return `<!doctype html>
 <html lang="en">
   <head>
@@ -593,17 +599,17 @@ export function renderCampaignEmail({
             </tr>
             <tr>
               <td style="padding:28px 32px 12px;">
-                ${body}
+                ${bodyHtml}
               </td>
             </tr>
             <tr>
               <td align="left" style="padding:8px 32px 32px;">
-                <a href="${href}" style="display:inline-block;background:${buttonColor};border-radius:8px;color:#ffffff;font-size:14px;font-weight:700;line-height:20px;padding:12px 20px;text-decoration:none;">${buttonText}</a>
+                <a href="${actionUrl}" style="display:inline-block;background:${buttonColor};border-radius:8px;color:#ffffff;font-size:14px;font-weight:700;line-height:20px;padding:12px 20px;text-decoration:none;">${buttonText}</a>
               </td>
             </tr>
             <tr>
               <td style="padding:18px 32px;border-top:1px solid #eef2f7;">
-                <p style="margin:0;color:#64748b;font-size:12px;line-height:18px;">This automated notification was sent to ${escapeHtml(mergedPlaceholders.employeeEmail ?? "your work email")}.</p>
+                <p style="margin:0;color:#64748b;font-size:12px;line-height:18px;">This automated notification was sent to ${employeeEmail}.</p>
               </td>
             </tr>
           </table>
@@ -612,4 +618,63 @@ export function renderCampaignEmail({
     </table>
   </body>
 </html>`;
+}
+
+export function renderCampaignEmail({
+  template,
+  placeholders,
+  actionUrl,
+  variation,
+}: RenderCampaignEmailInput) {
+  const mergedPlaceholders: Record<string, string> = {
+    ...placeholders,
+    variation: variation ?? template.contentVariations[0] ?? "",
+  };
+  const subject = escapeHtml(personalizeText(template.subject, mergedPlaceholders));
+  const preheader = escapeHtml(
+    personalizeText(template.preheader, mergedPlaceholders),
+  );
+
+  return renderEmailShell({
+    subject,
+    preheader,
+    bodyHtml: renderBodyParagraphs(template.body, mergedPlaceholders),
+    buttonText: escapeHtml(template.buttonText),
+    buttonColor: escapeAttribute(template.buttonColor),
+    actionUrl: escapeAttribute(actionUrl),
+    companyName: escapeHtml(mergedPlaceholders.companyName ?? "your company"),
+    employeeEmail: escapeHtml(
+      mergedPlaceholders.employeeEmail ?? "your work email",
+    ),
+  });
+}
+
+export function renderGeneratedCampaignEmail({
+  template,
+  placeholders,
+  actionUrl,
+  variation,
+  subject,
+  body,
+  preheader,
+}: RenderGeneratedCampaignEmailInput) {
+  const mergedPlaceholders: Record<string, string> = {
+    ...placeholders,
+    variation: variation ?? template.contentVariations[0] ?? "",
+  };
+
+  return renderEmailShell({
+    subject: escapeHtml(personalizeText(subject, mergedPlaceholders)),
+    preheader: escapeHtml(
+      personalizeText(preheader ?? template.preheader, mergedPlaceholders),
+    ),
+    bodyHtml: renderBodyParagraphs(body, mergedPlaceholders),
+    buttonText: escapeHtml(template.buttonText),
+    buttonColor: escapeAttribute(template.buttonColor),
+    actionUrl: escapeAttribute(actionUrl),
+    companyName: escapeHtml(mergedPlaceholders.companyName ?? "your company"),
+    employeeEmail: escapeHtml(
+      mergedPlaceholders.employeeEmail ?? "your work email",
+    ),
+  });
 }
