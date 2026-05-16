@@ -10,7 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus } from "lucide-react";
+import { BarChart2, Plus } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -128,6 +128,7 @@ export default async function CampaignsPage() {
                 <TableHead>Status</TableHead>
                 <TableHead>Scheduled</TableHead>
                 <TableHead>Created</TableHead>
+                <TableHead></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -151,6 +152,16 @@ export default async function CampaignsPage() {
                   </TableCell>
                   <TableCell style={{ color: "var(--ds-steel)" }}>
                     {formatDate(campaign.createdAt)}
+                  </TableCell>
+                  <TableCell>
+                    <Link
+                      href={`/dashboard/campaigns/${campaign.id}/analytics`}
+                      className="inline-flex items-center gap-1.5 text-[12px] font-[500] hover:underline"
+                      style={{ color: "var(--ds-link)" }}
+                    >
+                      <BarChart2 className="size-3.5" />
+                      Analytics
+                    </Link>
                   </TableCell>
                 </TableRow>
               ))}
