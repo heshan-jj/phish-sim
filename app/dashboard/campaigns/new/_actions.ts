@@ -14,8 +14,6 @@ import { eq } from "drizzle-orm";
 
 import type { TargetingOptions } from "./types";
 
-export type { TargetingOptions };
-
 export interface CreateCampaignInput {
   name: string;
   templateCategory: string;
