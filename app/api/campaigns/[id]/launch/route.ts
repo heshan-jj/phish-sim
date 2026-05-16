@@ -68,10 +68,16 @@ function moveIntoBusinessHoursUTC(date: Date): Date {
   }
 }
 
-function computeScheduledAt(baseDate: Date): Date {
-  const randomOffsetMinutes = Math.floor(Math.random() * (MAX_STAGGER_MINUTES + 1));
-  const offsetDate = addMinutes(baseDate, randomOffsetMinutes);
-  return moveIntoBusinessHoursUTC(offsetDate);
+/**
+ * Computes a randomised scheduled time within the stagger window (0–240 min)
+ * anchored at baseDate, adjusted to fall within business hours UTC.
+ * Only called when staggerSends is enabled.
+ */
+function computeStaggeredScheduledAt(baseDate: Date): Date {
+  const randomOffsetMinutes = Math.floor(
+    Math.random() * (MAX_STAGGER_MINUTES + 1),
+  );
+  return moveIntoBusinessHoursUTC(addMinutes(baseDate, randomOffsetMinutes));
 }
 
 function buildTrackUrl({
@@ -229,9 +235,14 @@ export async function POST(
         typeof employee.department === "string" &&
         departmentSet.has(employee.department),
     );
-  } else if (settings?.targetMode === "employees" && settings.employeeIds?.length) {
+  } else if (
+    settings?.targetMode === "employees" &&
+    settings.employeeIds?.length
+  ) {
     const employeeIdSet = new Set(settings.employeeIds);
-    recipients = allEmployees.filter((employee) => employeeIdSet.has(employee.id));
+    recipients = allEmployees.filter((employee) =>
+      employeeIdSet.has(employee.id),
+    );
   }
 
   if (recipients.length === 0) {
@@ -254,7 +265,17 @@ export async function POST(
   const companyContext = toCompanyContext(org.context);
   const batchFailures: string[] = [];
   const scheduledTimes: Date[] = [];
-  const baseSendDate = campaign.schedule ?? new Date();
+
+  // Determine the base send time.
+  // - sendImmediately=true (or no stored schedule) → omit scheduledAt so
+  //   Resend delivers immediately without any "time in the past" rejection.
+  // - sendImmediately=false + stored schedule → honour the schedule,
+  //   optionally spreading sends within the stagger window.
+  const sendImmediately = settings?.sendImmediately ?? true;
+  const staggerSends = settings?.staggerSends ?? false;
+  const baseSendDate =
+    !sendImmediately && campaign.schedule ? campaign.schedule : null;
+
   let queued = 0;
 
   console.info("[campaign-launch] starting", {
@@ -263,7 +284,9 @@ export async function POST(
     targetMode: settings?.targetMode ?? "all",
     recipientCount: recipients.length,
     batchSize: BATCH_SIZE,
-    baseSendDate: baseSendDate.toISOString(),
+    sendImmediately,
+    staggerSends,
+    baseSendDate: baseSendDate?.toISOString() ?? "immediate",
     fromEmail,
   });
 
@@ -299,12 +322,23 @@ export async function POST(
           });
 
           const token = crypto.randomUUID();
-          const scheduledAt = computeScheduledAt(baseSendDate);
+
+          // Only compute a future scheduledAt when the campaign is NOT
+          // immediate. When sendImmediately is true, omitting scheduledAt
+          // entirely is correct — passing any timestamp (even "now") risks
+          // Resend rejecting it as a past time due to clock skew.
+          let scheduledAt: Date | null = null;
+          if (!sendImmediately && baseSendDate) {
+            scheduledAt = staggerSends
+              ? computeStaggeredScheduledAt(baseSendDate)
+              : moveIntoBusinessHoursUTC(baseSendDate);
+          }
+
           console.info("[campaign-launch] email generated", {
             campaignId: campaign.id,
             employeeId: employee.id,
             token,
-            scheduledAt: scheduledAt.toISOString(),
+            scheduledAt: scheduledAt?.toISOString() ?? "immediate",
             subjectLength: phishingEmail.subject.length,
             bodyLength: phishingEmail.body.length,
           });
@@ -327,7 +361,7 @@ export async function POST(
             metadata: {
               token,
               status: "sent",
-              sentAt: scheduledAt.toISOString(),
+              sentAt: scheduledAt?.toISOString() ?? new Date().toISOString(),
               phishingEmail: {
                 subject: phishingEmail.subject,
                 body: htmlBody,
@@ -337,25 +371,34 @@ export async function POST(
             },
           });
 
-          await sendWithRetry(resend, {
+          // Build the Resend payload.
+          // - Omit scheduledAt for immediate sends (avoids past-time rejection).
+          // - Use reply_to (snake_case) — Resend SDK v3+ dropped camelCase replyTo.
+          const resendPayload: Parameters<Resend["emails"]["send"]>[0] = {
             from: fromEmail,
             to: employee.email,
             subject: phishingEmail.subject,
             html: htmlBody,
-            replyTo: `${phishingEmail.senderName} <${phishingEmail.senderEmail}>`,
-            scheduledAt: scheduledAt.toISOString(),
-          });
+            reply_to: `${phishingEmail.senderName} <${phishingEmail.senderEmail}>`,
+          };
+          if (scheduledAt) {
+            resendPayload.scheduledAt = scheduledAt.toISOString();
+          }
+
+          await sendWithRetry(resend, resendPayload);
 
           queued += 1;
-          scheduledTimes.push(scheduledAt);
+          if (scheduledAt) scheduledTimes.push(scheduledAt);
+
           console.info("[campaign-launch] email queued", {
             campaignId: campaign.id,
             employeeId: employee.id,
             token,
-            scheduledAt: scheduledAt.toISOString(),
+            scheduledAt: scheduledAt?.toISOString() ?? "immediate",
           });
         } catch (error) {
-          const reason = error instanceof Error ? error.message : "Unknown error";
+          const reason =
+            error instanceof Error ? error.message : "Unknown error";
           batchFailures.push(`${employee.email}: ${reason}`);
           console.error("[campaign-launch] recipient failed", {
             campaignId: campaign.id,
@@ -390,7 +433,7 @@ export async function POST(
       ? new Date(
           Math.max(...scheduledTimes.map((timestamp) => timestamp.getTime())),
         ).toISOString()
-      : new Date(baseSendDate).toISOString();
+      : new Date().toISOString();
 
   if (queued === 0 && batchFailures.length > 0) {
     console.error("[campaign-launch] failed to queue campaign", {
