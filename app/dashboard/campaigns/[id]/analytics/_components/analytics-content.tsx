@@ -1,7 +1,8 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getCampaignAnalytics } from "@/lib/db/queries/analytics";
 import { Card } from "@/components/ui/card";
-import { ArrowUpRight, ArrowDownRight, Minus } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, Minus, Trophy } from "lucide-react";
 import { DepartmentChart } from "./department-chart";
 import { TimelineChart } from "./timeline-chart";
 import { EmployeeTable } from "./employee-table";
@@ -175,16 +176,30 @@ export async function AnalyticsContent({ campaignId }: Props) {
       />
 
       {/* Page header */}
-      <div>
-        <h1
-          className="text-[28px] font-[600] leading-[1.25] mb-1"
-          style={{ color: "var(--ds-ink)" }}
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1
+            className="text-[28px] font-[600] leading-[1.25] mb-1"
+            style={{ color: "var(--ds-ink)" }}
+          >
+            {campaign.name}
+          </h1>
+          <p className="text-[14px]" style={{ color: "var(--ds-steel)" }}>
+            Analytics &amp; engagement breakdown
+          </p>
+        </div>
+        <Link
+          href={`/dashboard/campaigns/${campaignId}/leaderboard`}
+          className="inline-flex items-center gap-2 rounded-[8px] border px-4 py-2.5 text-[13px] font-[600] transition-colors hover:bg-[var(--ds-surface)]"
+          style={{
+            borderColor: "var(--ds-hairline-strong)",
+            color: "var(--ds-ink)",
+            backgroundColor: "var(--ds-canvas)",
+          }}
         >
-          {campaign.name}
-        </h1>
-        <p className="text-[14px]" style={{ color: "var(--ds-steel)" }}>
-          Analytics &amp; engagement breakdown
-        </p>
+          <Trophy className="size-4" style={{ color: "var(--ds-primary)" }} />
+          Security leaderboard
+        </Link>
       </div>
 
       {/* Stat cards row */}

@@ -1,337 +1,147 @@
-/**
- * @file lib/scoring.ts
- *
- * Pure risk-scoring functions for the phishing simulation platform.
- * All computation is side-effect-free and safe to run server-side.
- */
-
 import type { CampaignEvent, Employee } from "@/types";
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-/** How an employee's risk score maps to a display tier. */
-export type RiskTier = "champion" | "at-risk" | "compromised";
-
-/**
- * Aggregated security posture for a single department across one or more
- * campaigns. Suitable for leaderboard summary tables.
- */
-export interface DepartmentScore {
+export type DepartmentScore = {
   department: string;
-  /** 0–100 mean risk score across all employees in this department. */
   avgScore: number;
-  /** Number of employees who submitted credentials. */
   compromisedCount: number;
-  /** Number of employees who reported the phishing attempt. */
   reportedCount: number;
-  /**
-   * Number of employees who neither got compromised nor reported —
-   * they received the email but took no risky or aware action.
-   */
   safeCount: number;
-  /**
-   * The campaign template that produced the highest compromise rate for
-   * this department. Populated when `campaignTemplateMap` is provided to
-   * `getDepartmentScores`; otherwise "—".
-   */
-  mostVulnerableTemplate: string;
-}
-
-/** Computed score record for a single employee — safe to pass to client components. */
-export interface EmployeeScore {
-  employeeId: string;
-  /** Full name — hidden in anonymous mode, shown as initials instead. */
-  name: string;
-  /** Pre-computed "A.B." style initials for anonymous mode. */
-  initials: string;
-  email: string;
-  department: string | null;
-  role: string | null;
-  /** 0–100 risk score. Higher is safer. */
-  score: number;
-  tier: RiskTier;
-  /** Deduplicated list of action types this employee triggered. */
-  actions: string[];
-  /** ISO string of the first non-"sent" event, or null if none yet. */
-  firstActionAt: string | null;
-  /** Minutes between the "sent" event and the first action taken. */
-  timeToActionMinutes: number | null;
-}
-
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
-
-/**
- * Point deltas applied for each action type.
- * Deductions are applied at most once per action type regardless of how many
- * times the same event appears (deduplication via Set).
- */
-const SCORE_DELTA: Partial<Record<string, number>> = {
-  email_opened: -5,
-  link_clicked: -20,
-  credential_attempted: -50,
-  credentials_submitted: -50, // same severity as credential_attempted
-  reported: +25,
+  mostVulnerableTemplate: string | null;
 };
 
-/** Extra penalty when an employee answered a call AND submitted credentials. */
-const CALL_CREDENTIAL_COMBO_PENALTY = -10;
+export type RiskTier = "champion" | "at_risk" | "compromised";
 
-// ---------------------------------------------------------------------------
-// calculateRiskScore
-// ---------------------------------------------------------------------------
+const SCORE_START = 100;
+const PENALTY_EMAIL_OPENED = 5;
+const PENALTY_LINK_CLICKED = 20;
+const PENALTY_CREDENTIAL = 50;
+const BONUS_REPORTED = 25;
+const PENALTY_CALL_AND_CREDENTIAL = 10;
 
 /**
- * Computes a 0–100 risk score for a single employee from their event log.
- *
- * Scoring rules:
- * - Starts at 100 (perfect score).
- * - `email_opened`         → −5
- * - `link_clicked`         → −20
- * - `credential_attempted` → −50  (deduplicated with `credentials_submitted`)
- * - `reported`             → +25  (capped at 100)
- * - `call_answered` + any credential event → additional −10
- * - Result clamped to [0, 100].
- *
- * @param events - All `CampaignEvent` rows for a single employee.
+ * Computes a 0–100 security awareness score from campaign events.
+ * Higher is better. Reported adds +25 before the final cap at 100.
  */
 export function calculateRiskScore(events: CampaignEvent[]): number {
   const actions = new Set(events.map((e) => e.action));
 
-  let score = 100;
+  let score = SCORE_START;
 
-  for (const [action, delta] of Object.entries(SCORE_DELTA)) {
-    // credential_attempted and credentials_submitted share the same -50 bucket;
-    // apply the penalty only once even if both events are present.
-    if (action === "credentials_submitted" && actions.has("credential_attempted")) {
-      continue;
-    }
-    if (actions.has(action as CampaignEvent["action"])) score += delta ?? 0;
+  if (actions.has("email_opened")) score -= PENALTY_EMAIL_OPENED;
+  if (actions.has("link_clicked")) score -= PENALTY_LINK_CLICKED;
+  if (actions.has("credential_attempted")) score -= PENALTY_CREDENTIAL;
+  if (actions.has("reported")) score += BONUS_REPORTED;
+  if (actions.has("call_answered") && actions.has("credential_attempted")) {
+    score -= PENALTY_CALL_AND_CREDENTIAL;
   }
 
-  // Combo penalty: vishing call answered AND credentials submitted
-  const hasCredential =
-    actions.has("credential_attempted") || actions.has("credentials_submitted");
-  if (actions.has("call_answered") && hasCredential) {
-    score += CALL_CREDENTIAL_COMBO_PENALTY;
-  }
-
-  return Math.min(100, Math.max(0, score));
+  return Math.max(0, Math.min(100, score));
 }
 
-// ---------------------------------------------------------------------------
-// getTier
-// ---------------------------------------------------------------------------
-
-/**
- * Maps a numeric risk score to its display tier.
- *
- * | Range  | Tier           | Visual cue              |
- * |--------|----------------|-------------------------|
- * | 75–100 | "champion"     | Green border + shield   |
- * | 40–74  | "at-risk"      | Amber border + warning  |
- * | 0–39   | "compromised"  | Red border + skull      |
- */
-export function getTier(score: number): RiskTier {
+export function getRiskTier(score: number): RiskTier {
   if (score >= 75) return "champion";
-  if (score >= 40) return "at-risk";
+  if (score >= 40) return "at_risk";
   return "compromised";
 }
 
-// ---------------------------------------------------------------------------
-// buildInitials
-// ---------------------------------------------------------------------------
-
-/** Converts "Alice Bob" → "A.B." */
-function buildInitials(name: string): string {
-  const parts = name.trim().split(/\s+/);
-  return parts
-    .filter(Boolean)
-    .map((p) => p[0]?.toUpperCase() ?? "")
-    .join(".")
-    .concat(".");
-}
-
-// ---------------------------------------------------------------------------
-// buildEmployeeScores
-// ---------------------------------------------------------------------------
-
-/**
- * Converts raw DB rows (employees + their events) into serialisable
- * `EmployeeScore` records ready to pass as Server → Client component props.
- *
- * @param employees - All employees who participated in the campaign.
- * @param events    - All events for the campaign (across all employees).
- */
-export function buildEmployeeScores(
-  employees: Pick<Employee, "id" | "name" | "email" | "department" | "role">[],
-  events: CampaignEvent[],
-): EmployeeScore[] {
-  // Group events by employeeId
-  const eventsByEmployee = new Map<string, CampaignEvent[]>();
-  for (const evt of events) {
-    const arr = eventsByEmployee.get(evt.employeeId) ?? [];
-    arr.push(evt);
-    eventsByEmployee.set(evt.employeeId, arr);
+export function getRiskTierLabel(tier: RiskTier): string {
+  switch (tier) {
+    case "champion":
+      return "Security Champion";
+    case "at_risk":
+      return "At Risk";
+    case "compromised":
+      return "Compromised";
   }
-
-  return employees.map((emp) => {
-    const empEvents = eventsByEmployee.get(emp.id) ?? [];
-    const score = calculateRiskScore(empEvents);
-
-    const sentEvt = empEvents.find((e) => e.action === "sent");
-    const firstAction = empEvents.find((e) => e.action !== "sent");
-
-    const timeToActionMinutes =
-      sentEvt && firstAction
-        ? Math.max(
-            0,
-            Math.round(
-              (firstAction.createdAt.getTime() - sentEvt.createdAt.getTime()) /
-                60_000,
-            ),
-          )
-        : null;
-
-    return {
-      employeeId: emp.id,
-      name: emp.name,
-      initials: buildInitials(emp.name),
-      email: emp.email,
-      department: emp.department,
-      role: emp.role,
-      score,
-      tier: getTier(score),
-      actions: [...new Set(empEvents.map((e) => e.action))],
-      firstActionAt: firstAction?.createdAt.toISOString() ?? null,
-      timeToActionMinutes,
-    };
-  });
 }
 
-// ---------------------------------------------------------------------------
-// getDepartmentScores
-// ---------------------------------------------------------------------------
+function groupEventsByEmployee(
+  events: CampaignEvent[],
+): Map<string, CampaignEvent[]> {
+  const map = new Map<string, CampaignEvent[]>();
+  for (const evt of events) {
+    const list = map.get(evt.employeeId) ?? [];
+    list.push(evt);
+    map.set(evt.employeeId, list);
+  }
+  return map;
+}
+
+function isCompromised(events: CampaignEvent[]): boolean {
+  return events.some(
+    (e) =>
+      e.action === "credential_attempted" ||
+      e.action === "credentials_submitted",
+  );
+}
+
+function isReported(events: CampaignEvent[]): boolean {
+  return events.some((e) => e.action === "reported");
+}
 
 /**
- * Aggregates per-department risk metrics from employee and event data.
- *
- * @param employees          - All employees who participated (any campaign).
- * @param events             - All events to analyse.
- * @param campaignTemplateMap - Optional map of `campaignId → template name`
- *                             used to populate `mostVulnerableTemplate`.
- *
- * @returns Array sorted ascending by `avgScore` (most dangerous first).
+ * Aggregates per-department risk metrics for leaderboard and analytics views.
  */
 export function getDepartmentScores(
   employees: Pick<Employee, "id" | "department">[],
   events: CampaignEvent[],
-  campaignTemplateMap: Record<string, string> = {},
+  templateName: string | null = null,
 ): DepartmentScore[] {
-  // Build a lookup from employeeId → department
-  const empDeptMap = new Map(employees.map((e) => [e.id, e.department ?? "Unknown"]));
+  const eventsByEmployee = groupEventsByEmployee(events);
 
-  // Group events by employeeId
-  const eventsByEmployee = new Map<string, CampaignEvent[]>();
-  for (const evt of events) {
-    const arr = eventsByEmployee.get(evt.employeeId) ?? [];
-    arr.push(evt);
-    eventsByEmployee.set(evt.employeeId, arr);
-  }
+  const deptBuckets = new Map<
+    string,
+    {
+      scores: number[];
+      compromisedCount: number;
+      reportedCount: number;
+      safeCount: number;
+    }
+  >();
 
-  type DeptAccum = {
-    scores: number[];
-    compromisedCount: number;
-    reportedCount: number;
-    safeCount: number;
-    /** campaignId → number of compromised employees from that campaign */
-    templateCompromises: Map<string, number>;
-    /** campaignId → total employees targeted by that campaign */
-    templateTotals: Map<string, number>;
-  };
-
-  const deptMap = new Map<string, DeptAccum>();
-
-  for (const [empId, empEvents] of eventsByEmployee.entries()) {
-    const dept = empDeptMap.get(empId) ?? "Unknown";
+  for (const emp of employees) {
+    const dept = emp.department?.trim() || "Unknown";
+    const empEvents = eventsByEmployee.get(emp.id) ?? [];
     const score = calculateRiskScore(empEvents);
-    const actionSet = new Set(empEvents.map((e) => e.action));
+    const compromised = isCompromised(empEvents);
+    const reported = isReported(empEvents);
 
-    const isCompromised =
-      actionSet.has("credential_attempted") ||
-      actionSet.has("credentials_submitted");
-    const isReported = actionSet.has("reported");
+    const bucket = deptBuckets.get(dept) ?? {
+      scores: [],
+      compromisedCount: 0,
+      reportedCount: 0,
+      safeCount: 0,
+    };
 
-    const campaignId = empEvents[0]?.campaignId;
+    bucket.scores.push(score);
+    if (compromised) bucket.compromisedCount++;
+    else if (reported) bucket.reportedCount++;
+    else if (score >= 75) bucket.safeCount++;
 
-    let d = deptMap.get(dept);
-    if (!d) {
-      d = {
-        scores: [],
-        compromisedCount: 0,
-        reportedCount: 0,
-        safeCount: 0,
-        templateCompromises: new Map(),
-        templateTotals: new Map(),
-      };
-      deptMap.set(dept, d);
-    }
-
-    d.scores.push(score);
-    if (isCompromised) {
-      d.compromisedCount++;
-      if (campaignId) {
-        d.templateCompromises.set(
-          campaignId,
-          (d.templateCompromises.get(campaignId) ?? 0) + 1,
-        );
-      }
-    } else if (isReported) {
-      d.reportedCount++;
-    } else {
-      d.safeCount++;
-    }
-
-    if (campaignId) {
-      d.templateTotals.set(
-        campaignId,
-        (d.templateTotals.get(campaignId) ?? 0) + 1,
-      );
-    }
-
-    deptMap.set(dept, d);
+    deptBuckets.set(dept, bucket);
   }
 
-  return Array.from(deptMap.entries())
-    .map(([department, d]) => {
-      // Find the campaign template with the highest compromise rate
-      let mostVulnerableTemplate = "—";
-      let bestRate = 0;
-      for (const [cid, count] of d.templateCompromises.entries()) {
-        const total = d.templateTotals.get(cid) ?? 1;
-        const rate = count / total;
-        if (rate > bestRate) {
-          bestRate = rate;
-          mostVulnerableTemplate = campaignTemplateMap[cid] ?? cid;
-        }
-      }
-
+  const results: DepartmentScore[] = Array.from(deptBuckets.entries()).map(
+    ([department, bucket]) => {
       const avgScore =
-        d.scores.length > 0
-          ? Math.round(d.scores.reduce((a, b) => a + b, 0) / d.scores.length)
+        bucket.scores.length > 0
+          ? Math.round(
+              bucket.scores.reduce((sum, s) => sum + s, 0) /
+                bucket.scores.length,
+            )
           : 100;
 
       return {
         department,
         avgScore,
-        compromisedCount: d.compromisedCount,
-        reportedCount: d.reportedCount,
-        safeCount: d.safeCount,
-        mostVulnerableTemplate,
-      } satisfies DepartmentScore;
-    })
-    .sort((a, b) => a.avgScore - b.avgScore); // most dangerous department first
+        compromisedCount: bucket.compromisedCount,
+        reportedCount: bucket.reportedCount,
+        safeCount: bucket.safeCount,
+        mostVulnerableTemplate:
+          bucket.compromisedCount > 0 ? templateName : null,
+      };
+    },
+  );
+
+  return results.sort((a, b) => a.avgScore - b.avgScore);
 }

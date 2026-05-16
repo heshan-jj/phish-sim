@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
-import { BarChart2, Trash2, AlertTriangle } from "lucide-react";
+import { BarChart2, Trash2, AlertTriangle, Trophy } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -186,6 +186,14 @@ export function CampaignsClient({ campaigns: initial }: Props) {
                       >
                         <BarChart2 className="size-3.5" />
                         Analytics
+                      </Link>
+                      <Link
+                        href={`/dashboard/campaigns/${campaign.id}/leaderboard`}
+                        className="ds-interactive-link inline-flex items-center gap-1.5 text-[12px] font-[500]"
+                        style={{ color: "var(--ds-link)" }}
+                      >
+                        <Trophy className="size-3.5" />
+                        Leaderboard
                       </Link>
                       <button
                         onClick={() => handleDeleteClick(campaign.id)}
