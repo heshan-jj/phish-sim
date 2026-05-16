@@ -2,8 +2,10 @@ import { db } from "@/lib/db";
 import { organizations } from "@/lib/db/schema";
 import { createServerClient } from "@/lib/supabase/server";
 import { eq } from "drizzle-orm";
+import { cache } from "react";
+import { redirect } from "next/navigation";
 
-export async function getOrgForUser() {
+export const getOrgForUser = cache(async function getOrgForUser() {
   const supabase = await createServerClient();
 
   const {
@@ -19,4 +21,10 @@ export async function getOrgForUser() {
     .limit(1);
 
   return org ?? null;
+});
+
+export async function requireDashboardOrg() {
+  const org = await getOrgForUser();
+  if (!org) redirect("/login");
+  return org;
 }

@@ -1,0 +1,30 @@
+Trusted-by section logo checklist
+================================
+
+Target section/component:
+- components/landing/social-proof-strip.tsx
+
+Where logos should live:
+- public/landing/logos/
+
+Current logo slot mapping (replace these files with your final brand logos):
+1) SLOT_SAAS          -> public/landing/logos/industry-saas.svg
+2) SLOT_FINANCE       -> public/landing/logos/industry-finance.svg
+3) SLOT_HEALTHCARE    -> public/landing/logos/industry-health.svg
+4) SLOT_RETAIL        -> public/landing/logos/industry-retail.svg
+5) SLOT_TECHNOLOGY    -> public/landing/logos/industry-tech.svg
+6) SLOT_ENTERPRISE    -> public/landing/logos/industry-enterprise.svg
+
+Recommended export format:
+- SVG preferred (transparent background)
+- Viewbox-friendly artwork
+- Single-color or duotone marks for best visual consistency
+
+Recommended display constraints in this UI:
+- Height: ~32px visual height
+- Width: 96px to 140px per logo
+- Keep similar optical weight so marquee spacing stays balanced
+
+After you provide final logos:
+- Replace files at the exact paths above (same filenames), OR
+- If filenames differ, update LOGOS array in components/landing/social-proof-strip.tsx
