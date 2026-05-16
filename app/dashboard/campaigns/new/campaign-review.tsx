@@ -123,6 +123,16 @@ export function CampaignReview({
               label="Scenario"
               value={template?.description ?? "—"}
             />
+              <SummaryRow
+                label="Landing page"
+                value={
+                  template?.landingPageType.replaceAll("_", " ") ?? "—"
+                }
+              />
+              <SummaryRow
+                label="Urgency"
+                value={template?.urgencyLevel ?? "—"}
+              />
             <SummaryRow label="Difficulty" value={difficulty} />
           </SummarySection>
 
@@ -137,7 +147,7 @@ export function CampaignReview({
             <SummaryRow label="Schedule" value={formatSchedule(settings)} />
             <SummaryRow
               label="Stagger sends"
-              value={settings.staggerSends ? "Yes (4 hours)" : "No"}
+              value={settings.staggerSends ? "Yes (template delays)" : "No"}
             />
             <SummaryRow
               label="Difficulty override"

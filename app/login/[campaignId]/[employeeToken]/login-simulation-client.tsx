@@ -1,8 +1,9 @@
 "use client";
 
-import { type FormEvent, type ReactElement, useMemo, useState } from "react";
+import type { LandingPageType } from "@/lib/campaign-templates";
+import { type FormEvent, type ReactElement, useEffect, useMemo, useState } from "react";
 
-type LoginVariant = "microsoft365" | "workday" | "docusign" | "slack";
+type LoginVariant = LandingPageType;
 
 interface LoginSimulationClientProps {
   token: string;
@@ -39,6 +40,28 @@ function MicrosoftLogo() {
   );
 }
 
+function GoogleWorkspaceLogo() {
+  return (
+    <div
+      className="flex size-8 items-center justify-center rounded-full border border-[#dadce0] text-lg font-semibold text-[#1a73e8]"
+      aria-hidden
+    >
+      G
+    </div>
+  );
+}
+
+function GenericLogo({ label }: { label: string }) {
+  return (
+    <div
+      className="flex size-8 items-center justify-center rounded-md bg-slate-900 text-xs font-semibold text-white"
+      aria-hidden
+    >
+      {label.slice(0, 2).toUpperCase()}
+    </div>
+  );
+}
+
 function WorkdayLogo() {
   return (
     <svg viewBox="0 0 120 30" className="h-7 w-[120px]" aria-hidden>
@@ -72,6 +95,18 @@ function SlackLogo() {
 }
 
 const THEMES: Record<LoginVariant, BrandTheme> = {
+  google_workspace: {
+    name: "Google Workspace",
+    pageBg: "bg-[#f8fafd]",
+    panelBg: "bg-white",
+    title: "Sign in",
+    subtitle: "to continue to your account",
+    submitLabel: "Next",
+    helpLabel: "Forgot email?",
+    accentClass: "text-[#1a73e8]",
+    buttonClass: "bg-[#1a73e8] hover:bg-[#1765cc]",
+    logo: <GoogleWorkspaceLogo />,
+  },
   microsoft365: {
     name: "Microsoft 365",
     pageBg: "bg-[#f3f3f3]",
@@ -83,6 +118,18 @@ const THEMES: Record<LoginVariant, BrandTheme> = {
     accentClass: "text-[#0067b8]",
     buttonClass: "bg-[#0067b8] hover:bg-[#005da6]",
     logo: <MicrosoftLogo />,
+  },
+  generic_sso: {
+    name: "Company SSO",
+    pageBg: "bg-[#f5f7fb]",
+    panelBg: "bg-white",
+    title: "Sign in",
+    subtitle: "Use your organization account",
+    submitLabel: "Continue",
+    helpLabel: "Need help signing in?",
+    accentClass: "text-[#2563eb]",
+    buttonClass: "bg-[#2563eb] hover:bg-[#1d4ed8]",
+    logo: <GenericLogo label="SSO" />,
   },
   workday: {
     name: "Workday",
@@ -108,6 +155,42 @@ const THEMES: Record<LoginVariant, BrandTheme> = {
     buttonClass: "bg-[#4a00e0] hover:bg-[#3e00bf]",
     logo: <DocusignLogo />,
   },
+  helpdesk: {
+    name: "IT Helpdesk",
+    pageBg: "bg-[#f4f7fb]",
+    panelBg: "bg-white",
+    title: "Helpdesk Portal",
+    subtitle: "Sign in to review your ticket",
+    submitLabel: "Review Ticket",
+    helpLabel: "Contact support",
+    accentClass: "text-[#2563eb]",
+    buttonClass: "bg-[#2563eb] hover:bg-[#1d4ed8]",
+    logo: <GenericLogo label="HD" />,
+  },
+  vpn: {
+    name: "VPN Portal",
+    pageBg: "bg-[#f8fafc]",
+    panelBg: "bg-white",
+    title: "Remote Access",
+    subtitle: "Renew your VPN certificate",
+    submitLabel: "Renew Access",
+    helpLabel: "Need VPN help?",
+    accentClass: "text-[#dc2626]",
+    buttonClass: "bg-[#dc2626] hover:bg-[#b91c1c]",
+    logo: <GenericLogo label="VPN" />,
+  },
+  teams: {
+    name: "Microsoft Teams",
+    pageBg: "bg-[#f5f5fb]",
+    panelBg: "bg-white",
+    title: "Sign in to Teams",
+    subtitle: "View your unread messages",
+    submitLabel: "Sign in",
+    helpLabel: "Can't access Teams?",
+    accentClass: "text-[#6264a7]",
+    buttonClass: "bg-[#6264a7] hover:bg-[#53559a]",
+    logo: <GenericLogo label="TM" />,
+  },
   slack: {
     name: "Slack",
     pageBg: "bg-[#f8f8f8]",
@@ -120,7 +203,85 @@ const THEMES: Record<LoginVariant, BrandTheme> = {
     buttonClass: "bg-[#611f69] hover:bg-[#4e1754]",
     logo: <SlackLogo />,
   },
+  dropbox: {
+    name: "Dropbox",
+    pageBg: "bg-[#f7faff]",
+    panelBg: "bg-white",
+    title: "Sign in",
+    subtitle: "to review your storage",
+    submitLabel: "Sign in",
+    helpLabel: "Forgot password?",
+    accentClass: "text-[#0061ff]",
+    buttonClass: "bg-[#0061ff] hover:bg-[#0052d9]",
+    logo: <GenericLogo label="DB" />,
+  },
+  mfa: {
+    name: "MFA Enrollment",
+    pageBg: "bg-[#f8fafc]",
+    panelBg: "bg-white",
+    title: "Secure your account",
+    subtitle: "Sign in to complete MFA setup",
+    submitLabel: "Continue",
+    helpLabel: "Use another method",
+    accentClass: "text-[#2563eb]",
+    buttonClass: "bg-[#2563eb] hover:bg-[#1d4ed8]",
+    logo: <GenericLogo label="MFA" />,
+  },
+  benefits: {
+    name: "Benefits Portal",
+    pageBg: "bg-[#f3fbfa]",
+    panelBg: "bg-white",
+    title: "Benefits Sign In",
+    subtitle: "Review your enrollment",
+    submitLabel: "Sign In",
+    helpLabel: "Need benefits help?",
+    accentClass: "text-[#0f766e]",
+    buttonClass: "bg-[#0f766e] hover:bg-[#0d5f59]",
+    logo: <GenericLogo label="BN" />,
+  },
+  shipping: {
+    name: "Delivery Portal",
+    pageBg: "bg-[#faf7ff]",
+    panelBg: "bg-white",
+    title: "Delivery Verification",
+    subtitle: "Sign in to reschedule delivery",
+    submitLabel: "Continue",
+    helpLabel: "Track another package",
+    accentClass: "text-[#7c3aed]",
+    buttonClass: "bg-[#7c3aed] hover:bg-[#6d28d9]",
+    logo: <GenericLogo label="DL" />,
+  },
+  linkedin: {
+    name: "Professional Network",
+    pageBg: "bg-[#f3f7fb]",
+    panelBg: "bg-white",
+    title: "Sign in",
+    subtitle: "to view profile activity",
+    submitLabel: "Sign in",
+    helpLabel: "Forgot password?",
+    accentClass: "text-[#0a66c2]",
+    buttonClass: "bg-[#0a66c2] hover:bg-[#084f96]",
+    logo: <GenericLogo label="IN" />,
+  },
+  software_license: {
+    name: "License Portal",
+    pageBg: "bg-[#f8fafc]",
+    panelBg: "bg-white",
+    title: "Software License",
+    subtitle: "Sign in to renew access",
+    submitLabel: "Renew License",
+    helpLabel: "Contact software support",
+    accentClass: "text-[#111827]",
+    buttonClass: "bg-[#111827] hover:bg-[#374151]",
+    logo: <GenericLogo label="SW" />,
+  },
 };
+
+function emailPlaceholder(variant: LoginVariant) {
+  if (variant === "microsoft365") return "Email, phone, or Skype";
+  if (variant === "slack") return "name@company.com";
+  return "Work email";
+}
 
 export function LoginSimulationClient({
   token,
@@ -134,11 +295,27 @@ export function LoginSimulationClient({
 }: LoginSimulationClientProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [startedAt] = useState(() => Date.now());
   const [submitting, setSubmitting] = useState(false);
   const [showModal, setShowModal] = useState(false);
 
   const theme = THEMES[variant];
   const displayRedFlags = useMemo(() => redFlags.slice(0, 5), [redFlags]);
+
+  useEffect(() => {
+    void fetch(
+      `/api/track?token=${encodeURIComponent(token)}&action=landing_page_viewed`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          token,
+          action: "landing_page_viewed",
+          metadata: { campaignId, landingPageType: variant },
+        }),
+      },
+    );
+  }, [campaignId, token, variant]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -146,7 +323,7 @@ export function LoginSimulationClient({
 
     try {
       await fetch(
-        `/api/track?token=${encodeURIComponent(token)}&action=credential_attempted`,
+        `/api/track?token=${encodeURIComponent(token)}&action=credentials_submitted`,
         {
           method: "POST",
           headers: {
@@ -154,11 +331,12 @@ export function LoginSimulationClient({
           },
           body: JSON.stringify({
             token,
-            action: "credential_attempted",
+            action: "credentials_submitted",
             metadata: {
               campaignId,
-              email: email.trim(),
-              passwordLength: password.length,
+              enteredEmail: email.trim().length > 0,
+              enteredPassword: password.length > 0,
+              timeToSubmit: Math.max(0, Math.round((Date.now() - startedAt) / 1000)),
             },
           }),
         },
@@ -166,11 +344,23 @@ export function LoginSimulationClient({
     } finally {
       setSubmitting(false);
       setShowModal(true);
+      void fetch(
+        `/api/track?token=${encodeURIComponent(token)}&action=training_viewed`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            token,
+            action: "training_viewed",
+            metadata: { campaignId },
+          }),
+        },
+      );
     }
   }
 
   return (
-    <div className={`flex min-h-screen items-center justify-center px-4 ${theme.pageBg}`}>
+    <div className={`flex min-h-dvh items-center justify-center px-4 ${theme.pageBg}`}>
       <div className="w-full max-w-[420px] rounded-md border border-black/10 bg-white/80 p-8 shadow-xl backdrop-blur-sm">
         <div className="mb-8 flex items-center gap-3">
           {theme.logo}
@@ -187,9 +377,7 @@ export function LoginSimulationClient({
             required
             value={email}
             onChange={(event) => setEmail(event.target.value)}
-            placeholder={
-              variant === "slack" ? "name@company.com" : "Email, phone, or Skype"
-            }
+            placeholder={emailPlaceholder(variant)}
             className="h-11 w-full rounded border border-[#c7c7c7] bg-white px-3 text-sm outline-none ring-0 transition focus:border-[#005fb8] focus:shadow-[0_0_0_1px_#005fb8]"
           />
           <input

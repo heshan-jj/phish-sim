@@ -1,16 +1,27 @@
 import { LoginSimulationClient } from "@/app/login/[campaignId]/[employeeToken]/login-simulation-client";
+import { getTemplateById, type LandingPageType } from "@/lib/campaign-templates";
 import { createServerClient, createServiceRoleClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import { unstable_noStore as noStore } from "next/cache";
 
 type JsonRecord = Record<string, unknown>;
-type LoginVariant = "microsoft365" | "workday" | "docusign" | "slack";
+type LoginVariant = LandingPageType;
 
 const DEFAULT_RED_FLAGS: Record<LoginVariant, string[]> = {
+  google_workspace: [
+    "The email asks you to sign in from a link rather than a known portal.",
+    "Unexpected account prompts should be verified directly in the app.",
+    "The sender domain should match the real workspace notification domain.",
+  ],
   microsoft365: [
     "Urgent pressure to verify credentials immediately",
     "Sender domain looks close to legitimate but not exact",
     "Security warning language without internal verification details",
+  ],
+  generic_sso: [
+    "The login page is generic and not clearly tied to the company domain.",
+    "Unexpected SSO prompts should be opened from a bookmark.",
+    "The message relies on account urgency to drive action.",
   ],
   workday: [
     "Unexpected payroll or HR urgency outside normal process",
@@ -26,6 +37,51 @@ const DEFAULT_RED_FLAGS: Record<LoginVariant, string[]> = {
     "Account verification warning creates artificial urgency",
     "Message asks you to re-enter workspace credentials",
     "Tone and formatting differ from normal Slack notifications",
+  ],
+  helpdesk: [
+    "The ticket update should match a request you opened.",
+    "Helpdesk portals should be accessed from the company intranet.",
+    "The message gives limited context before asking you to sign in.",
+  ],
+  vpn: [
+    "VPN changes should be verified through IT documentation.",
+    "The email threatens access loss to create urgency.",
+    "Certificate renewals should not start from an unexpected email link.",
+  ],
+  teams: [
+    "Executive-message notifications can abuse authority and urgency.",
+    "Open Teams directly instead of following a sign-in link.",
+    "The sender domain should match the real collaboration platform.",
+  ],
+  dropbox: [
+    "Storage quota alerts should be checked inside the storage app.",
+    "The email pushes quick action to avoid service interruption.",
+    "The sender domain should match the real cloud provider.",
+  ],
+  mfa: [
+    "MFA enrollment should start from a trusted identity portal.",
+    "A credential prompt before MFA setup is a warning sign.",
+    "Security policy language can be used to rush sign-ins.",
+  ],
+  benefits: [
+    "Benefits deadlines can create pressure to click quickly.",
+    "HR portals should be opened from known bookmarks.",
+    "Sensitive benefits changes deserve out-of-band verification.",
+  ],
+  shipping: [
+    "Unexpected package notices often hide suspicious links.",
+    "Carrier delivery changes should be verified on the carrier site.",
+    "The message lacks a recognizable tracking domain.",
+  ],
+  linkedin: [
+    "Curiosity about profile views is a common social lure.",
+    "Social notifications should be opened in the official app.",
+    "The sender is not clearly tied to the real platform domain.",
+  ],
+  software_license: [
+    "Software renewals should be confirmed with IT or procurement.",
+    "The email threatens loss of work tools to create urgency.",
+    "License portals should be opened from trusted company resources.",
   ],
 };
 
@@ -64,21 +120,12 @@ function parseCommaSeparated(value: string | undefined): string[] {
     .filter(Boolean);
 }
 
+function isLoginVariant(value: string): value is LoginVariant {
+  return value in DEFAULT_RED_FLAGS;
+}
+
 function resolveLoginVariant(templateCategory: string): LoginVariant {
-  const value = templateCategory.toLowerCase();
-  if (value.includes("it-security") || value.includes("account-verification")) {
-    return "microsoft365";
-  }
-  if (value.includes("hr-payroll") || value.includes("executive")) {
-    return "workday";
-  }
-  if (value.includes("vendor-invoice")) {
-    return "docusign";
-  }
-  if (value.includes("saas")) {
-    return "slack";
-  }
-  return "microsoft365";
+  return getTemplateById(templateCategory)?.landingPageType ?? "generic_sso";
 }
 
 async function getSimulationData(campaignId: string, employeeToken: string) {
@@ -155,13 +202,22 @@ async function getSimulationData(campaignId: string, employeeToken: string) {
     firstStringArray(eventEmail, ["redFlags", "red_flags"]) ??
     firstStringArray(phishingEmail, ["redFlags", "red_flags"]) ??
     firstStringArray(campaignEmail, ["redFlags", "red_flags"]);
+  const landingPageType =
+    firstString(eventMetadata, ["landingPageType", "landing_page_type"]) ??
+    firstString(eventEmail, ["landingPageType", "landing_page_type"]) ??
+    firstString(phishingEmail, ["landingPageType", "landing_page_type"]) ??
+    firstString(campaignEmail, ["landingPageType", "landing_page_type"]);
 
   const totalEmployees = new Set<string>();
   const clickedEmployees = new Set<string>();
   for (const row of relatedRows ?? []) {
     if (typeof row.employee_id !== "string") continue;
     totalEmployees.add(row.employee_id);
-    if (row.action === "link_clicked" || row.action === "credential_attempted") {
+    if (
+      row.action === "link_clicked" ||
+      row.action === "credential_attempted" ||
+      row.action === "credentials_submitted"
+    ) {
       clickedEmployees.add(row.employee_id);
     }
   }
@@ -176,6 +232,7 @@ async function getSimulationData(campaignId: string, employeeToken: string) {
     senderEmail,
     subject,
     redFlagsFromDb,
+    landingPageType,
     clickRate,
   };
 }
@@ -196,7 +253,10 @@ export default async function LoginSimulationPage({
     notFound();
   }
 
-  const variant = resolveLoginVariant(simulationData.templateCategory);
+  const variant =
+    simulationData.landingPageType && isLoginVariant(simulationData.landingPageType)
+      ? simulationData.landingPageType
+      : resolveLoginVariant(simulationData.templateCategory);
   const fallbackFlags = DEFAULT_RED_FLAGS[variant];
 
   const queryFlags = parseCommaSeparated(

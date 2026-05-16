@@ -1,4 +1,5 @@
 import { listCampaignsByOrg } from "@/lib/db/queries/campaigns";
+import { getTemplateDisplayName } from "@/lib/campaign-templates";
 import { getOrgForUser } from "@/lib/org";
 import { Button } from "@/components/ui/button";
 import {
@@ -134,7 +135,7 @@ export default async function CampaignsPage() {
                 <TableRow key={campaign.id}>
                   <TableCell className="font-medium">{campaign.name}</TableCell>
                   <TableCell style={{ color: "var(--ds-steel)" }}>
-                    {campaign.templateCategory}
+                    {getTemplateDisplayName(campaign.templateCategory)}
                   </TableCell>
                   <TableCell>{campaign.difficulty}</TableCell>
                   <TableCell>

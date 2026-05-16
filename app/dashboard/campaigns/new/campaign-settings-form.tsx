@@ -319,10 +319,10 @@ export function CampaignSettingsForm({
       >
         <div>
           <p className="text-[14px] font-[500]" style={{ color: "var(--ds-ink)" }}>
-            Stagger sends over 4 hours
+            Stagger sends
           </p>
           <p className="text-[13px]" style={{ color: "var(--ds-steel)" }}>
-            Randomize delivery times across a 4-hour window
+            Use randomized delivery delays from the selected template
           </p>
         </div>
         <Switch

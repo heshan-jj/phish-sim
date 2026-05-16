@@ -5,7 +5,10 @@ const ALLOWED_ACTIONS = new Set([
   "sent",
   "email_opened",
   "link_clicked",
+  "landing_page_viewed",
   "credential_attempted",
+  "credentials_submitted",
+  "training_viewed",
   "reported",
   "call_answered",
   "call_hung_up",
@@ -51,11 +54,12 @@ function sanitizeCredentialMetadata(metadata: unknown): JsonRecord {
   if ("password" in sanitized) {
     delete sanitized.password;
   }
-
-  const rawPasswordLength = sanitized.passwordLength;
-  if (typeof rawPasswordLength !== "number" || Number.isNaN(rawPasswordLength)) {
-    sanitized.passwordLength = 0;
+  if ("passwordLength" in sanitized) {
+    delete sanitized.passwordLength;
   }
+
+  sanitized.enteredEmail = sanitized.enteredEmail === true;
+  sanitized.enteredPassword = sanitized.enteredPassword === true;
 
   sanitized.employeeStatus = "compromised";
   sanitized.compromisedAt = new Date().toISOString();
@@ -211,7 +215,7 @@ export async function POST(request: NextRequest) {
   const userAgent = request.headers.get("user-agent");
   const ip = request.headers.get("x-forwarded-for") ?? request.headers.get("x-real-ip");
   const metadata =
-    action === "credential_attempted"
+    action === "credential_attempted" || action === "credentials_submitted"
       ? sanitizeCredentialMetadata(body.metadata)
       : body.metadata;
 

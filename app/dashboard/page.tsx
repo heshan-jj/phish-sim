@@ -1,4 +1,5 @@
 import { getDashboardStats } from "@/lib/db/queries/dashboard";
+import { getTemplateDisplayName } from "@/lib/campaign-templates";
 import { getOrgForUser } from "@/lib/org";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -215,7 +216,7 @@ export default async function DashboardPage() {
                   <TableRow key={campaign.id}>
                     <TableCell className="font-medium">{campaign.name}</TableCell>
                     <TableCell style={{ color: "var(--ds-steel)" }}>
-                      {campaign.templateCategory}
+                      {getTemplateDisplayName(campaign.templateCategory)}
                     </TableCell>
                     <TableCell>
                       <span

@@ -1,5 +1,10 @@
 import type { CampaignSettings } from "@/lib/campaign-settings";
-import { generatePhishingEmail, type CompanyContext } from "@/lib/ai";
+import {
+  getTemplateById,
+  personalizeText,
+  pickTemplateVariation,
+  renderCampaignEmail,
+} from "@/lib/campaign-templates";
 import { db } from "@/lib/db";
 import { listEmployeesByOrg } from "@/lib/db/queries/employees";
 import { campaignEvents, campaigns, organizations } from "@/lib/db/schema";
@@ -13,36 +18,8 @@ const BATCH_DELAY_MS = 1000;
 const MAX_STAGGER_MINUTES = 240;
 const DEFAULT_FROM_EMAIL = "security@yourdomain.com";
 
-type OrgContextRecord = Partial<{
-  vendors: string;
-  terminology: string;
-  events: string;
-  orgStructure: string;
-}>;
-
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-function normalizeDifficulty(value: string): "easy" | "medium" | "hard" {
-  const normalized = value.trim().toLowerCase();
-  if (normalized === "easy" || normalized === "hard") return normalized;
-  return "medium";
-}
-
-function toCompanyContext(value: unknown): CompanyContext {
-  const context =
-    value && typeof value === "object" && !Array.isArray(value)
-      ? (value as OrgContextRecord)
-      : {};
-
-  return {
-    vendors: context.vendors ?? "",
-    tools: context.vendors ?? "",
-    internalTerms: context.terminology ?? "",
-    recentEvents: context.events ?? "",
-    orgStructure: context.orgStructure ?? "",
-  };
 }
 
 function addMinutes(input: Date, minutes: number) {
@@ -78,6 +55,20 @@ function computeStaggeredScheduledAt(baseDate: Date): Date {
     Math.random() * (MAX_STAGGER_MINUTES + 1),
   );
   return moveIntoBusinessHoursUTC(addMinutes(baseDate, randomOffsetMinutes));
+}
+
+function randomDelaySeconds(min: number, max: number) {
+  const floor = Math.max(0, Math.floor(min));
+  const ceiling = Math.max(floor, Math.floor(max));
+  return floor + Math.floor(Math.random() * (ceiling - floor + 1));
+}
+
+function fullNameParts(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  return {
+    firstName: parts[0] ?? "there",
+    lastName: parts.slice(1).join(" "),
+  };
 }
 
 function buildTrackUrl({
@@ -205,7 +196,7 @@ export async function POST(
   }
 
   const [org] = await db
-    .select({ id: organizations.id, context: organizations.context })
+    .select({ id: organizations.id, name: organizations.name })
     .from(organizations)
     .where(eq(organizations.userId, user.id))
     .limit(1);
@@ -262,19 +253,28 @@ export async function POST(
   const resend = new Resend(resendApiKey);
   const origin = process.env.NEXT_PUBLIC_APP_URL ?? request.nextUrl.origin;
   const fromEmail = process.env.RESEND_FROM_EMAIL ?? DEFAULT_FROM_EMAIL;
-  const companyContext = toCompanyContext(org.context);
+  const template = getTemplateById(campaign.templateCategory);
+  if (!template) {
+    return NextResponse.json(
+      { error: "Campaign template not found" },
+      { status: 400 },
+    );
+  }
   const batchFailures: string[] = [];
   const scheduledTimes: Date[] = [];
 
   // Determine the base send time.
-  // - sendImmediately=true (or no stored schedule) → omit scheduledAt so
-  //   Resend delivers immediately without any "time in the past" rejection.
-  // - sendImmediately=false + stored schedule → honour the schedule,
-  //   optionally spreading sends within the stagger window.
+  // - sendImmediately=true + staggerSends=false -> omit scheduledAt so Resend
+  //   delivers immediately without any "time in the past" rejection.
+  // - sendImmediately=true + staggerSends=true -> schedule each recipient with
+  //   the template's anti-detection delay window.
+  // - sendImmediately=false + stored schedule -> honour the schedule,
+  //   optionally spreading sends within the campaign window.
   const sendImmediately = settings?.sendImmediately ?? true;
   const staggerSends = settings?.staggerSends ?? false;
   const baseSendDate =
     !sendImmediately && campaign.schedule ? campaign.schedule : null;
+  let nextImmediateScheduledAt = new Date();
 
   let queued = 0;
 
@@ -305,30 +305,54 @@ export async function POST(
     await Promise.all(
       batch.map(async (employee) => {
         try {
-          console.info("[campaign-launch] generating email", {
+          console.info("[campaign-launch] rendering email", {
             campaignId: campaign.id,
             employeeId: employee.id,
             department: employee.department,
           });
 
-          const phishingEmail = await generatePhishingEmail({
-            employeeName: employee.name,
-            employeeRole: employee.role ?? "Employee",
-            employeeDepartment: employee.department ?? "General",
-            seniority: employee.seniority ?? "Individual Contributor",
-            companyContext,
-            templateCategory: campaign.templateCategory,
-            difficulty: normalizeDifficulty(campaign.difficulty),
-          });
-
           const token = crypto.randomUUID();
+          const { firstName, lastName } = fullNameParts(employee.name);
+          const variation = pickTemplateVariation(template);
+          const actionUrl = new URL(
+            `/login/${campaign.id}/${token}`,
+            origin,
+          ).toString();
+          const placeholders = {
+            firstName,
+            lastName,
+            department: employee.department ?? "General",
+            employeeId: employee.id,
+            employeeEmail: employee.email,
+            companyName: org.name,
+            variation,
+          };
+          const subject = personalizeText(template.subject, placeholders);
+          const preheader = personalizeText(template.preheader, placeholders);
+          const emailBody = renderCampaignEmail({
+            template,
+            placeholders,
+            actionUrl,
+            variation,
+          });
+          const phishingEmail = {
+            subject,
+            body: emailBody,
+            senderName: template.senderName,
+            senderEmail: template.senderEmail,
+          };
 
-          // Only compute a future scheduledAt when the campaign is NOT
-          // immediate. When sendImmediately is true, omitting scheduledAt
-          // entirely is correct — passing any timestamp (even "now") risks
-          // Resend rejecting it as a past time due to clock skew.
           let scheduledAt: Date | null = null;
-          if (!sendImmediately && baseSendDate) {
+          if (sendImmediately && staggerSends) {
+            const delaySeconds = randomDelaySeconds(
+              template.delayMin,
+              template.delayMax,
+            );
+            nextImmediateScheduledAt = new Date(
+              nextImmediateScheduledAt.getTime() + delaySeconds * 1000,
+            );
+            scheduledAt = nextImmediateScheduledAt;
+          } else if (!sendImmediately && baseSendDate) {
             scheduledAt = staggerSends
               ? computeStaggeredScheduledAt(baseSendDate)
               : moveIntoBusinessHoursUTC(baseSendDate);
@@ -367,19 +391,26 @@ export async function POST(
                 body: htmlBody,
                 senderName: phishingEmail.senderName,
                 senderEmail: phishingEmail.senderEmail,
+                preheader,
+                templateId: template.id,
+                templateName: template.name,
+                landingPageType: template.landingPageType,
+                urgencyLevel: template.urgencyLevel,
+                buttonText: template.buttonText,
+                redFlags: template.redFlags,
+                variation,
               },
             },
           });
 
           // Build the Resend payload.
           // - Omit scheduledAt for immediate sends (avoids past-time rejection).
-          // - Use reply_to (snake_case) — Resend SDK v3+ dropped camelCase replyTo.
           const resendPayload: Parameters<Resend["emails"]["send"]>[0] = {
             from: fromEmail,
             to: employee.email,
             subject: phishingEmail.subject,
             html: htmlBody,
-            reply_to: `${phishingEmail.senderName} <${phishingEmail.senderEmail}>`,
+            replyTo: `${phishingEmail.senderName} <${phishingEmail.senderEmail}>`,
           };
           if (scheduledAt) {
             resendPayload.scheduledAt = scheduledAt.toISOString();
