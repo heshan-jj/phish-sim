@@ -1,18 +1,18 @@
 import { count, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { campaigns, employees } from "@/lib/db/schema";
+import { employees } from "@/lib/db/schema";
 import { listCampaignsByOrg } from "./campaigns";
 
 export async function getDashboardStats(orgId: string) {
-  const [employeeRow] = await db
-    .select({ count: count() })
-    .from(employees)
-    .where(eq(employees.orgId, orgId));
-
-  const campaignRows = await db
-    .select({ status: campaigns.status })
-    .from(campaigns)
-    .where(eq(campaigns.orgId, orgId));
+  // Run both queries in parallel and derive status counts from the campaign
+  // list that is already fetched, avoiding a separate round-trip.
+  const [[employeeRow], allCampaigns] = await Promise.all([
+    db
+      .select({ count: count() })
+      .from(employees)
+      .where(eq(employees.orgId, orgId)),
+    listCampaignsByOrg(orgId),
+  ]);
 
   const statusCounts = {
     draft: 0,
@@ -20,16 +20,14 @@ export async function getDashboardStats(orgId: string) {
     complete: 0,
   };
 
-  for (const row of campaignRows) {
-    statusCounts[row.status] += 1;
+  for (const c of allCampaigns) {
+    statusCounts[c.status] += 1;
   }
-
-  const recentCampaigns = (await listCampaignsByOrg(orgId)).slice(0, 5);
 
   return {
     employeeCount: employeeRow?.count ?? 0,
-    campaignCount: campaignRows.length,
+    campaignCount: allCampaigns.length,
     statusCounts,
-    recentCampaigns,
+    recentCampaigns: allCampaigns.slice(0, 5),
   };
 }

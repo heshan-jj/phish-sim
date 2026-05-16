@@ -259,20 +259,10 @@ export default async function LoginSimulationPage({
       : resolveLoginVariant(simulationData.templateCategory);
   const fallbackFlags = DEFAULT_RED_FLAGS[variant];
 
-  const queryFlags = parseCommaSeparated(
-    typeof query.redFlags === "string" ? query.redFlags : undefined,
-  );
-  const redFlags = (queryFlags.length ? queryFlags : simulationData.redFlagsFromDb) ?? fallbackFlags;
-
-  const senderName =
-    (typeof query.senderName === "string" && query.senderName.trim()) ||
-    simulationData.senderName;
-  const senderEmail =
-    (typeof query.senderEmail === "string" && query.senderEmail.trim()) ||
-    simulationData.senderEmail;
-  const subject =
-    (typeof query.subject === "string" && query.subject.trim()) ||
-    simulationData.subject;
+  const redFlags = simulationData.redFlagsFromDb ?? fallbackFlags;
+  const senderName = simulationData.senderName;
+  const senderEmail = simulationData.senderEmail;
+  const subject = simulationData.subject;
 
   return (
     <LoginSimulationClient

@@ -37,6 +37,21 @@ export async function POST(request: Request) {
     );
   }
 
+  const ALLOWED_TYPES = new Set([
+    "image/png",
+    "image/jpeg",
+    "image/jpg",
+    "image/gif",
+    "image/webp",
+  ]);
+
+  if (!ALLOWED_TYPES.has(file.type)) {
+    return NextResponse.json(
+      { error: "Invalid file type. Only PNG, JPEG, GIF, and WebP are allowed." },
+      { status: 400 },
+    );
+  }
+
   const fileName = file instanceof File ? file.name : "logo";
   const ext = fileName.split(".").pop() ?? "png";
   const path = `${user.id}/logo.${ext}`;

@@ -44,22 +44,29 @@ function mergeMetadata(
   }
   return metadata;
 }
-
 function sanitizeCredentialMetadata(metadata: unknown): JsonRecord {
   if (!isJsonRecord(metadata)) {
     return {};
   }
 
   const sanitized: JsonRecord = { ...metadata };
-  if ("password" in sanitized) {
-    delete sanitized.password;
-  }
-  if ("passwordLength" in sanitized) {
-    delete sanitized.passwordLength;
+
+  // Strip raw credentials and PII
+  if ("password" in sanitized) delete sanitized.password;
+  if ("email" in sanitized) {
+    sanitized.enteredEmail = typeof sanitized.email === "string" && sanitized.email.length > 0;
+    delete sanitized.email;
   }
 
+  // Normalize boolean flags
   sanitized.enteredEmail = sanitized.enteredEmail === true;
   sanitized.enteredPassword = sanitized.enteredPassword === true;
+
+  // Handle password length safely
+  const rawPasswordLength = sanitized.passwordLength;
+  if (typeof rawPasswordLength !== "number" || Number.isNaN(rawPasswordLength)) {
+    sanitized.passwordLength = 0;
+  }
 
   sanitized.employeeStatus = "compromised";
   sanitized.compromisedAt = new Date().toISOString();
@@ -94,21 +101,52 @@ async function resolveTrackingContext(token: string) {
   };
 }
 
+type TrackingContext = NonNullable<Awaited<ReturnType<typeof resolveTrackingContext>>>;
+
 async function insertEvent({
   token,
   action,
   metadata,
   userAgent,
   ip,
+  resolvedContext,
 }: {
   token: string;
   action: string;
   metadata: unknown;
   userAgent: string | null;
   ip: string | null;
+  resolvedContext?: TrackingContext;
 }) {
-  const context = await resolveTrackingContext(token);
+  const context = resolvedContext ?? await resolveTrackingContext(token);
   if (!context) return false;
+
+  // Rate limiting / deduplication:
+  // 1. Prevent multiple "submitted" or "attempted" events for the same token.
+  if (action === "credentials_submitted" || action === "credential_attempted") {
+    const { count } = await context.supabase
+      .from("campaign_events")
+      .select("*", { count: "exact", head: true })
+      .eq("campaign_id", context.campaignId)
+      .eq("employee_id", context.employeeId)
+      .eq("action", action);
+
+    if (count && count > 0) {
+      console.info("[api/track] rate-limited: action already exists", { token, action });
+      return true; // Return true because we "processed" it (by ignoring it)
+    }
+  }
+
+  // 2. Generic flood protection: limit total events per token to 50
+  const { count: totalCount } = await context.supabase
+    .from("campaign_events")
+    .select("*", { count: "exact", head: true })
+    .contains("metadata", { token });
+
+  if (totalCount && totalCount > 50) {
+    console.warn("[api/track] flood-protection: too many events for token", { token });
+    return true;
+  }
 
   const payload = {
     campaign_id: context.campaignId,
@@ -163,6 +201,7 @@ export async function GET(request: NextRequest) {
       metadata: { redirect },
       userAgent,
       ip,
+      resolvedContext: context,
     });
     if (!inserted) {
       return NextResponse.json({ error: "Invalid tracking token" }, { status: 404 });

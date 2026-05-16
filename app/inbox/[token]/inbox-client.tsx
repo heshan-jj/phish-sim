@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import DOMPurify from "dompurify";
 import { Inbox, Send, Trash2 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 export interface InboxMessage {
   id: string;
@@ -77,10 +77,15 @@ export function InboxClient({
     setSafeHtml(buildTrackedHtml(message.bodyHtml, token));
   }, [message.bodyHtml, token]);
 
+  const tracked = useRef(false);
+
   useEffect(() => {
-    void fetch(`/api/track?token=${encodeURIComponent(token)}&action=email_opened`, {
+    if (tracked.current) return;
+    tracked.current = true;
+
+    fetch(`/api/track?token=${encodeURIComponent(token)}&action=email_opened`, {
       method: "POST",
-    });
+    }).catch(console.error);
   }, [token]);
 
   async function handleReportPhishing() {

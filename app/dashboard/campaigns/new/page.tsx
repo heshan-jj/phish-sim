@@ -20,7 +20,7 @@ import {
 } from "@/lib/campaign-templates";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 const DEFAULT_SETTINGS: CampaignSettingsFormValues = {
   campaignName: "",
@@ -44,6 +44,7 @@ export default function NewCampaignPage() {
   const [targetingLoading, setTargetingLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const targetingFetchedRef = useRef(false);
 
   const selectedTemplate = templateId ? getTemplateById(templateId) : null;
 
@@ -55,6 +56,8 @@ export default function NewCampaignPage() {
   }, [settings.difficultyOverride, settings.overrideDifficulty, selectedTemplate]);
 
   const loadTargeting = useCallback(async () => {
+    if (targetingFetchedRef.current) return;
+    targetingFetchedRef.current = true;
     setTargetingLoading(true);
     try {
       const data = await getTargetingOptions();
