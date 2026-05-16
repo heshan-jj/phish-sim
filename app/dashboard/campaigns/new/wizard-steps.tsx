@@ -16,7 +16,7 @@ export function StepIndicator({ current }: { current: number }) {
         return (
           <div key={step} className="flex items-center">
             <div
-              className="w-8 h-8 rounded-full flex items-center justify-center text-[13px] font-[600] transition-colors"
+              className="w-8 h-8 rounded-full flex items-center justify-center text-[13px] font-[600] transition-all duration-200"
               style={{
                 backgroundColor: isActive
                   ? "var(--ds-primary)"
@@ -49,7 +49,7 @@ export function StepIndicator({ current }: { current: number }) {
 export function StepLabel({ step }: { step: number }) {
   return (
     <p
-      className="text-center text-[13px] font-[500] mb-6 -mt-4"
+      className="text-center text-[13px] font-[500] mb-6 -mt-4 transition-opacity duration-200"
       style={{ color: "var(--ds-stone)" }}
     >
       Step {step} of {TOTAL_STEPS} — {STEP_LABELS[step - 1]}

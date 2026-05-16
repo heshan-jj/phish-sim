@@ -31,7 +31,7 @@ const variantStyles: Record<
   },
   app: {
     base: "text-[var(--ds-steel)]",
-    hoverBg: "hover:text-[var(--ds-ink)]",
+    hoverBg: "hover:text-[var(--ds-ink)] hover:bg-ds-surface/80",
   },
   sheet: {
     base: "text-[#37352f]",
@@ -54,10 +54,10 @@ export function NavLinkMotion({
   const showActivePill = isApp && active;
 
   const sharedClass = cn(
-    "relative inline-flex px-3 py-2 text-sm font-medium rounded-[8px] cursor-pointer",
+    "relative inline-flex px-3 py-2 text-sm font-medium rounded-[8px] cursor-pointer transition-colors",
     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-primary)] focus-visible:ring-offset-2",
     styles.base,
-    !isApp && styles.hoverBg,
+    (!isApp || !active) && styles.hoverBg,
     active && isApp && "text-[var(--ds-ink)]",
     className,
   );

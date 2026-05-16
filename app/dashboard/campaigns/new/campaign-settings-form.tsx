@@ -352,31 +352,21 @@ export function CampaignSettingsForm({
       </div>
 
       <div className="flex gap-3 pt-2">
-        <button
-          type="button"
-          onClick={onBack}
-          className="h-11 px-4 rounded-[8px] text-[14px] font-[500] border transition-colors"
-          style={{
-            borderColor: "var(--ds-hairline-strong)",
-            color: "var(--ds-ink)",
-            backgroundColor: "transparent",
-          }}
-        >
-          Back
-        </button>
         <Button
           type="button"
+          variant="dsOutline"
+          size="app"
+          onClick={onBack}
+        >
+          Back
+        </Button>
+        <Button
+          type="button"
+          variant="ds"
+          size="app"
           onClick={onContinue}
           disabled={continueDisabled || loading}
-          className="flex-1 h-11 rounded-[8px] text-[14px] font-[500]"
-          style={{
-            backgroundColor:
-              continueDisabled || loading
-                ? "var(--ds-hairline)"
-                : "var(--ds-primary)",
-            color:
-              continueDisabled || loading ? "var(--ds-muted)" : "#ffffff",
-          }}
+          className="flex-1"
         >
           {loading ? (
             <>

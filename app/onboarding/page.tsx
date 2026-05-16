@@ -380,19 +380,11 @@ export default function OnboardingPage() {
 
             <Button
               type="button"
+              variant="ds"
+              size="app"
               onClick={() => void handleStep1Next()}
               disabled={loading || orgLoading || !orgName}
-              className="w-full h-11 rounded-[8px] text-[14px] font-[500]"
-              style={{
-                backgroundColor:
-                  loading || orgLoading || !orgName
-                    ? "var(--ds-hairline)"
-                    : "var(--ds-primary)",
-                color:
-                  loading || orgLoading || !orgName
-                    ? "var(--ds-muted)"
-                    : "#ffffff",
-              }}
+              className="w-full"
             >
               {orgLoading ? (
                 <>
@@ -482,28 +474,20 @@ export default function OnboardingPage() {
             )}
 
             <div className="flex gap-3">
-              <button
+              <Button
                 type="button"
+                variant="dsOutline"
+                size="app"
                 onClick={() => setStep(1)}
-                className="h-11 px-4 rounded-[8px] text-[14px] font-[500] border transition-colors"
-                style={{
-                  borderColor: "var(--ds-hairline-strong)",
-                  color: "var(--ds-ink)",
-                  backgroundColor: "transparent",
-                }}
               >
                 Back
-              </button>
+              </Button>
               <Button
+                variant="ds"
+                size="app"
                 onClick={handleStep2Next}
                 disabled={loading}
-                className="flex-1 h-11 rounded-[8px] text-[14px] font-[500]"
-                style={{
-                  backgroundColor: loading
-                    ? "var(--ds-hairline)"
-                    : "var(--ds-primary)",
-                  color: loading ? "var(--ds-muted)" : "#ffffff",
-                }}
+                className="flex-1"
               >
                 {loading ? (
                   <>
@@ -593,28 +577,20 @@ export default function OnboardingPage() {
             </div>
 
             <div className="flex gap-3">
-              <button
+              <Button
                 type="button"
+                variant="dsOutline"
+                size="app"
                 onClick={() => setStep(2)}
-                className="h-11 px-4 rounded-[8px] text-[14px] font-[500] border transition-colors"
-                style={{
-                  borderColor: "var(--ds-hairline-strong)",
-                  color: "var(--ds-ink)",
-                  backgroundColor: "transparent",
-                }}
               >
                 Back
-              </button>
+              </Button>
               <Button
+                variant="ds"
+                size="app"
                 onClick={() => void handleFinish()}
                 disabled={loading}
-                className="flex-1 h-11 rounded-[8px] text-[14px] font-[500]"
-                style={{
-                  backgroundColor: loading
-                    ? "var(--ds-hairline)"
-                    : "var(--ds-primary)",
-                  color: loading ? "var(--ds-muted)" : "#ffffff",
-                }}
+                className="flex-1"
               >
                 {loading ? (
                   <>

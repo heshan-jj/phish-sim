@@ -50,6 +50,7 @@
   /* Design system semantic color tokens */
   --color-ds-primary: var(--ds-primary);
   --color-ds-primary-pressed: var(--ds-primary-pressed);
+  --color-ds-primary-deep: var(--ds-primary-deep);
   --color-ds-surface: var(--ds-surface);
   --color-ds-canvas: var(--ds-canvas);
   --color-ds-hairline: var(--ds-hairline);
@@ -147,6 +148,12 @@
   --ds-glass-blur: 16px;
   --ds-landing-surface: #f4f4f5;
   --ds-landing-canvas: #fafaf9;
+}
+
+@layer utilities {
+  .ds-interactive-link {
+    @apply transition-colors underline-offset-4 hover:underline;
+  }
 }
 
 @layer base {

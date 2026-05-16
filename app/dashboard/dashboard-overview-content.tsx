@@ -94,7 +94,7 @@ export async function DashboardOverviewContent() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <Card>
+        <Card className="hover:shadow-sm">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-[18px]">
               <Users className="size-5" style={{ color: "var(--ds-primary)" }} />
@@ -105,20 +105,19 @@ export async function DashboardOverviewContent() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Link href="/dashboard/employees">
-              <Button
-                type="button"
-                variant="outline"
-                className="h-11 w-full rounded-[8px] border-[var(--ds-hairline-strong)]"
-              >
-                Manage employees
-                <ArrowRight className="size-4" />
-              </Button>
-            </Link>
+            <Button
+              variant="dsOutline"
+              size="app"
+              className="w-full"
+              render={<Link href="/dashboard/employees" />}
+            >
+              Manage employees
+              <ArrowRight className="size-4" />
+            </Button>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="hover:shadow-sm">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-[18px]">
               <Megaphone className="size-5" style={{ color: "var(--ds-primary)" }} />
@@ -129,29 +128,24 @@ export async function DashboardOverviewContent() {
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
-            <Link href="/dashboard/campaigns/new">
-              <Button
-                type="button"
-                className="h-11 w-full rounded-[8px]"
-                style={{
-                  backgroundColor: "var(--ds-primary)",
-                  color: "#ffffff",
-                }}
-              >
-                <Plus className="size-4" />
-                Create campaign
-              </Button>
-            </Link>
-            <Link href="/dashboard/campaigns">
-              <Button
-                type="button"
-                variant="outline"
-                className="h-11 w-full rounded-[8px] border-[var(--ds-hairline-strong)]"
-              >
-                View all campaigns
-                <ArrowRight className="size-4" />
-              </Button>
-            </Link>
+            <Button
+              variant="ds"
+              size="app"
+              className="w-full"
+              render={<Link href="/dashboard/campaigns/new" />}
+            >
+              <Plus className="size-4" />
+              Create campaign
+            </Button>
+            <Button
+              variant="dsOutline"
+              size="app"
+              className="w-full"
+              render={<Link href="/dashboard/campaigns" />}
+            >
+              View all campaigns
+              <ArrowRight className="size-4" />
+            </Button>
           </CardContent>
         </Card>
       </div>
@@ -164,7 +158,7 @@ export async function DashboardOverviewContent() {
           </div>
           <Link
             href="/dashboard/campaigns"
-            className="text-[14px] font-[500] shrink-0"
+            className="ds-interactive-link text-[14px] font-[500] shrink-0"
             style={{ color: "var(--ds-link)" }}
           >
             View all
@@ -176,19 +170,14 @@ export async function DashboardOverviewContent() {
               <p className="text-[14px] mb-4" style={{ color: "var(--ds-steel)" }}>
                 No campaigns yet. Create your first simulation to get started.
               </p>
-              <Link href="/dashboard/campaigns/new">
-                <Button
-                  type="button"
-                  className="h-11 rounded-[8px] px-6"
-                  style={{
-                    backgroundColor: "var(--ds-primary)",
-                    color: "#ffffff",
-                  }}
-                >
-                  <Plus className="size-4" />
-                  Create campaign
-                </Button>
-              </Link>
+              <Button
+                variant="ds"
+                size="app"
+                render={<Link href="/dashboard/campaigns/new" />}
+              >
+                <Plus className="size-4" />
+                Create campaign
+              </Button>
             </div>
           ) : (
             <Table>

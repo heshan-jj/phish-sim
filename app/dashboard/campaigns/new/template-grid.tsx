@@ -72,8 +72,10 @@ export function TemplateGrid({ selectedId, onSelect }: TemplateGridProps) {
           <Card
             key={template.id}
             className={cn(
-              "flex flex-col transition-colors",
-              selected && "border-2 border-[var(--ds-primary)]",
+              "flex flex-col transition-all duration-200",
+              selected
+                ? "border-2 border-[var(--ds-primary)]"
+                : "hover:border-ds-hairline-strong hover:shadow-sm",
             )}
           >
             <CardHeader className="pb-2">
@@ -127,8 +129,9 @@ export function TemplateGrid({ selectedId, onSelect }: TemplateGridProps) {
             <CardFooter className="mt-auto pt-2">
               <Button
                 type="button"
-                variant={selected ? "default" : "outline"}
-                className="w-full h-10 rounded-[8px]"
+                variant={selected ? "ds" : "dsOutline"}
+                size="app"
+                className="w-full h-10"
                 onClick={() => onSelect(template)}
               >
                 {selected ? "Selected" : "Select"}

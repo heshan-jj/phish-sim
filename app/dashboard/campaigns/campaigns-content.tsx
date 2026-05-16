@@ -66,19 +66,14 @@ export async function CampaignsContent() {
         >
           Create a campaign from a template to start training your team.
         </p>
-        <Link href="/dashboard/campaigns/new">
-          <Button
-            type="button"
-            className="h-11 rounded-[8px] px-6"
-            style={{
-              backgroundColor: "var(--ds-primary)",
-              color: "#ffffff",
-            }}
-          >
-            <Plus className="size-4" />
-            Create campaign
-          </Button>
-        </Link>
+        <Button
+          variant="ds"
+          size="app"
+          render={<Link href="/dashboard/campaigns/new" />}
+        >
+          <Plus className="size-4" />
+          Create campaign
+        </Button>
       </div>
     );
   }
@@ -121,7 +116,7 @@ export async function CampaignsContent() {
             <TableCell>
               <Link
                 href={`/dashboard/campaigns/${campaign.id}/analytics`}
-                className="inline-flex items-center gap-1.5 text-[12px] font-[500] hover:underline"
+                className="ds-interactive-link inline-flex items-center gap-1.5 text-[12px] font-[500]"
                 style={{ color: "var(--ds-link)" }}
               >
                 <BarChart2 className="size-3.5" />

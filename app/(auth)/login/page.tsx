@@ -88,14 +88,10 @@ export default function LoginPage() {
 
           <Button
             type="submit"
+            variant="ds"
+            size="app"
             disabled={loading}
-            className="w-full h-11 rounded-[8px] text-[14px] font-[500] mt-1"
-            style={{
-              backgroundColor: loading
-                ? "var(--ds-hairline)"
-                : "var(--ds-primary)",
-              color: loading ? "var(--ds-muted)" : "#ffffff",
-            }}
+            className="w-full mt-1"
           >
             {loading ? (
               <>
@@ -115,7 +111,7 @@ export default function LoginPage() {
           Don&apos;t have an account?{" "}
           <Link
             href="/signup"
-            className="font-[500] underline-offset-4 hover:underline"
+            className="ds-interactive-link font-[500]"
             style={{ color: "var(--ds-link)" }}
           >
             Sign up
