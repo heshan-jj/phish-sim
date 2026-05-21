@@ -19,6 +19,7 @@ import { BrandLogo } from "@/components/brand/brand-logo";
 import { CheckCircle2, Loader2, Upload } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 
 const INDUSTRIES = [
   "Technology",
@@ -119,6 +120,7 @@ export default function OnboardingPage() {
   async function handleSuggestContext() {
     if (!orgName.trim()) {
       setError("Enter a company name on step 1 first.");
+      toast.error("Enter a company name on step 1 first.");
       return;
     }
     setSuggestingContext(true);
@@ -132,8 +134,11 @@ export default function OnboardingPage() {
       setTerminology(suggested.terminology);
       setEvents(suggested.events);
       setOrgStructure(suggested.orgStructure);
+      toast.success("AI context generated successfully");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "AI suggestion failed");
+      const msg = err instanceof Error ? err.message : "AI suggestion failed";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setSuggestingContext(false);
     }
@@ -221,18 +226,24 @@ export default function OnboardingPage() {
         });
         const body = (await res.json()) as { url?: string; error?: string };
         if (!res.ok) {
-          setError(
+          const msg =
             body.error ??
-              "Logo upload failed. Your details were saved — you can continue without a logo.",
-          );
+            "Logo upload failed. Your details were saved — you can continue without a logo.";
+          setError(msg);
+          toast.error(msg);
         } else {
           setLogoUrl(body.url ?? null);
+          toast.success("Company details saved");
         }
+      } else {
+        toast.success("Company details saved");
       }
 
       setStep(2);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      const msg = err instanceof Error ? err.message : "Something went wrong";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -247,9 +258,12 @@ export default function OnboardingPage() {
       if (!id) return;
 
       await saveContext(id, { vendors, terminology, events, orgStructure });
+      toast.success("Company context saved");
       setStep(3);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      const msg = err instanceof Error ? err.message : "Something went wrong";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -264,10 +278,13 @@ export default function OnboardingPage() {
       if (!id) return;
 
       await markOnboardingComplete(id);
+      toast.success("Workspace setup complete! Welcome aboard.");
       router.push("/dashboard");
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      const msg = err instanceof Error ? err.message : "Something went wrong";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }

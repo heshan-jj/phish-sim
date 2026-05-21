@@ -10,6 +10,7 @@ import { Eye, EyeOff, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { toast } from "sonner";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -32,10 +33,12 @@ export default function LoginPage() {
 
     if (authError) {
       setError(authError.message);
+      toast.error(authError.message);
       setLoading(false);
       return;
     }
 
+    toast.success("Signed in successfully");
     router.replace("/auth/post-login");
     router.refresh();
   }

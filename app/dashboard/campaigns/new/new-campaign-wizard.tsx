@@ -28,6 +28,7 @@ import { FormError } from "@/components/ui/form-error";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 
 export const DEFAULT_SETTINGS: CampaignSettingsFormValues = {
   campaignName: "",
@@ -198,10 +199,13 @@ export function NewCampaignWizard() {
     setError(null);
     try {
       await persistCampaign("draft");
+      toast.success("Campaign draft saved");
       router.push("/dashboard/campaigns");
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      const msg = err instanceof Error ? err.message : "Something went wrong";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -217,10 +221,13 @@ export function NewCampaignWizard() {
       if (!res.ok) {
         throw new Error(body.error ?? "Failed to start campaign send");
       }
+      toast.success("Campaign launched successfully");
       router.push("/dashboard/campaigns");
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      const msg = err instanceof Error ? err.message : "Something went wrong";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }

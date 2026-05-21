@@ -8,6 +8,7 @@ import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { NavLogo3D } from "@/components/nav/nav-logo-3d";
 import { NavLinkMotion } from "@/components/nav/nav-link-motion";
+import { toast } from "sonner";
 import {
   springNav,
   navItem,
@@ -72,6 +73,7 @@ export function DashboardNav({ orgName }: { orgName: string }) {
     setSigningOut(true);
     const supabase = createBrowserClient();
     await supabase.auth.signOut();
+    toast.success("Signed out successfully");
     router.replace("/login");
     router.refresh();
   }
