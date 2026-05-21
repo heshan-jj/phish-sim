@@ -300,10 +300,19 @@ async function insertEvent({
   resolvedContext?: TrackingContext;
 }): Promise<string | null> {
   const ctx = resolvedContext ?? (await resolveTrackingContext(token));
-  if (!ctx) return null;
+  if (!ctx) {
+    // #region agent log
+    fetch('http://127.0.0.1:7729/ingest/c8d9804c-28f9-4d81-aea6-a8b23bc1b28a',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'6df5d8'},body:JSON.stringify({sessionId:'6df5d8',runId:'pre-fix',hypothesisId:'H3',location:'app/api/track/route.ts:304',message:'track insert missing context',data:{action,hasToken:token.length>0,tokenLength:token.length},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
+    return null;
+  }
 
   // Guard 1 — skip all events once the employee is compromised
-  if (await isAlreadyCompromised(ctx)) {
+  const alreadyCompromised = await isAlreadyCompromised(ctx);
+  // #region agent log
+  fetch('http://127.0.0.1:7729/ingest/c8d9804c-28f9-4d81-aea6-a8b23bc1b28a',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'6df5d8'},body:JSON.stringify({sessionId:'6df5d8',runId:'pre-fix',hypothesisId:'H1,H5',location:'app/api/track/route.ts:310',message:'track compromised guard evaluated',data:{action,alreadyCompromised},timestamp:Date.now()})}).catch(()=>{});
+  // #endregion
+  if (alreadyCompromised) {
     console.info("[api/track] skipping event: employee already compromised", { token, action });
     return "skipped:compromised";
   }
@@ -316,6 +325,10 @@ async function insertEvent({
       .eq("campaign_id", ctx.campaignId)
       .eq("employee_id", ctx.employeeId)
       .eq("action", action);
+
+    // #region agent log
+    fetch('http://127.0.0.1:7729/ingest/c8d9804c-28f9-4d81-aea6-a8b23bc1b28a',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'6df5d8'},body:JSON.stringify({sessionId:'6df5d8',runId:'pre-fix',hypothesisId:'H5',location:'app/api/track/route.ts:325',message:'track duplicate credential guard evaluated',data:{action,count:count??0},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
 
     if (count && count > 0) {
       console.info("[api/track] rate-limited: credential event already exists", { token, action });
@@ -353,6 +366,9 @@ async function insertEvent({
   }
 
   const eventId = inserted.id as string;
+  // #region agent log
+  fetch('http://127.0.0.1:7729/ingest/c8d9804c-28f9-4d81-aea6-a8b23bc1b28a',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'6df5d8'},body:JSON.stringify({sessionId:'6df5d8',runId:'pre-fix',hypothesisId:'H1,H3,H4,H5',location:'app/api/track/route.ts:365',message:'track event inserted',data:{action,eventIdPresent:eventId.length>0,metadataKeys:isJsonRecord(metadata)?Object.keys(metadata).sort():[]},timestamp:Date.now()})}).catch(()=>{});
+  // #endregion
 
   // Mark employee compromised when credentials were submitted
   if (action === "credential_attempted" || action === "credentials_submitted") {
@@ -514,6 +530,10 @@ export async function POST(request: NextRequest) {
       ? sanitizeCredentialMetadata(body.metadata)
       : body.metadata;
 
+  // #region agent log
+  fetch('http://127.0.0.1:7729/ingest/c8d9804c-28f9-4d81-aea6-a8b23bc1b28a',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'6df5d8'},body:JSON.stringify({sessionId:'6df5d8',runId:'pre-fix',hypothesisId:'H3,H4',location:'app/api/track/route.ts:520',message:'track POST normalized request',data:{action,hasToken:token.length>0,metadataKeys:isJsonRecord(metadata)?Object.keys(metadata).sort():[]},timestamp:Date.now()})}).catch(()=>{});
+  // #endregion
+
   let eventId: string | null = null;
   try {
     eventId = await insertEvent({ token, action, metadata, userAgent, ip });
@@ -523,5 +543,8 @@ export async function POST(request: NextRequest) {
   }
 
   // eventId is null only when the token is unknown — return 200 regardless
+  // #region agent log
+  fetch('http://127.0.0.1:7729/ingest/c8d9804c-28f9-4d81-aea6-a8b23bc1b28a',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'6df5d8'},body:JSON.stringify({sessionId:'6df5d8',runId:'pre-fix',hypothesisId:'H1,H3,H5',location:'app/api/track/route.ts:536',message:'track POST response ready',data:{action,eventId},timestamp:Date.now()})}).catch(()=>{});
+  // #endregion
   return NextResponse.json({ success: true, eventId });
 }

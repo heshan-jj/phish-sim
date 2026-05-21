@@ -44,7 +44,6 @@ function removeTaglineSection(svg) {
     taglineStart,
   );
   if (taglineGroupStart === -1) return svg;
-  const closeIndex = svg.lastIndexOf("</g></g></svg>");
   const before = svg.slice(0, taglineGroupStart);
   const after = "</g></g></svg>";
   return before + after;

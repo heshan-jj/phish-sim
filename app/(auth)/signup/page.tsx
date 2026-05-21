@@ -10,6 +10,7 @@ import { FormError } from "@/components/ui/form-error";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { useState } from "react";
 
 export default function SignupPage() {
@@ -30,10 +31,14 @@ export default function SignupPage() {
     const { data, error: authError } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+      },
     });
 
     if (authError) {
       setError(authError.message);
+      toast.error(authError.message);
       setLoading(false);
       return;
     }
@@ -41,6 +46,7 @@ export default function SignupPage() {
     const userId = data.user?.id;
     if (!userId) {
       setError("Account creation failed. Please try again.");
+      toast.error("Account creation failed. Please try again.");
       setLoading(false);
       return;
     }
@@ -49,10 +55,19 @@ export default function SignupPage() {
       await createOrganization(userId, orgName);
     } catch {
       setError("Account created but could not set up your organization. Please contact support.");
+      toast.error("Account created but could not set up your organization. Please contact support.");
       setLoading(false);
       return;
     }
 
+    if (!data.session) {
+      toast.success("Verification email sent! Please check your inbox.");
+      setLoading(false);
+      router.push("/login");
+      return;
+    }
+
+    toast.success("Account created successfully!");
     router.push("/onboarding");
     router.refresh();
   }

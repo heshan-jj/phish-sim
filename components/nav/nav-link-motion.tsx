@@ -56,7 +56,6 @@ export function NavLinkMotion({
   const styles = variantStyles[variant];
   const isApp = variant === "app";
   const isAppSheet = variant === "appSheet";
-  const isSheetLike = variant === "sheet" || isAppSheet;
   const showActivePill = isApp && active;
 
   const sharedClass = cn(

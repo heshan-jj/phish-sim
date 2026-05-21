@@ -4,22 +4,15 @@ import postgres from "postgres";
 
 config({ path: ".env.local" });
 
-const DEPARTMENTS = [
-  "Engineering",
-  "Finance",
-  "HR",
-  "Marketing",
-  "Sales",
-] as const;
-
-const SENIORITIES = ["junior", "mid", "senior", "manager"] as const;
+type Department = "Engineering" | "Finance" | "HR" | "Marketing" | "Sales";
+type Seniority = "junior" | "mid" | "senior" | "manager";
 
 const SEED_EMPLOYEES: Array<{
   name: string;
   email: string;
-  department: (typeof DEPARTMENTS)[number];
+  department: Department;
   role: string;
-  seniority: (typeof SENIORITIES)[number];
+  seniority: Seniority;
 }> = [
   {
     name: "Alex Chen",

@@ -28,14 +28,22 @@ export function useSimulationTracking({
           metadata: { campaignId, landingPageType: variant },
         }),
       },
-    );
+    ).then((response) => {
+      // #region agent log
+      fetch('http://127.0.0.1:7729/ingest/c8d9804c-28f9-4d81-aea6-a8b23bc1b28a',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'6df5d8'},body:JSON.stringify({sessionId:'6df5d8',runId:'pre-fix',hypothesisId:'H2,H3',location:'components/simulations/shared/use-simulation-tracking.ts:33',message:'client landing tracking response',data:{ok:response.ok,status:response.status},timestamp:Date.now()})}).catch(()=>{});
+      // #endregion
+    }).catch((error: unknown) => {
+      // #region agent log
+      fetch('http://127.0.0.1:7729/ingest/c8d9804c-28f9-4d81-aea6-a8b23bc1b28a',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'6df5d8'},body:JSON.stringify({sessionId:'6df5d8',runId:'pre-fix',hypothesisId:'H2',location:'components/simulations/shared/use-simulation-tracking.ts:37',message:'client landing tracking failed',data:{error:error instanceof Error?error.message:String(error)},timestamp:Date.now()})}).catch(()=>{});
+      // #endregion
+    });
   }, [campaignId, token, variant]);
 
   const submitCredentials = useCallback(
     async (email: string, password: string) => {
       setSubmitting(true);
       try {
-        await fetch(
+        const response = await fetch(
           `/api/track?token=${encodeURIComponent(token)}&action=credentials_submitted`,
           {
             method: "POST",
@@ -55,6 +63,9 @@ export function useSimulationTracking({
             }),
           },
         );
+        // #region agent log
+        fetch('http://127.0.0.1:7729/ingest/c8d9804c-28f9-4d81-aea6-a8b23bc1b28a',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'6df5d8'},body:JSON.stringify({sessionId:'6df5d8',runId:'pre-fix',hypothesisId:'H2,H3,H4,H5',location:'components/simulations/shared/use-simulation-tracking.ts:69',message:'client credential tracking response',data:{ok:response.ok,status:response.status},timestamp:Date.now()})}).catch(()=>{});
+        // #endregion
       } finally {
         setSubmitting(false);
         setShowDebrief(true);
@@ -69,7 +80,15 @@ export function useSimulationTracking({
               metadata: { campaignId },
             }),
           },
-        );
+        ).then((response) => {
+          // #region agent log
+          fetch('http://127.0.0.1:7729/ingest/c8d9804c-28f9-4d81-aea6-a8b23bc1b28a',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'6df5d8'},body:JSON.stringify({sessionId:'6df5d8',runId:'pre-fix',hypothesisId:'H1,H2,H3',location:'components/simulations/shared/use-simulation-tracking.ts:91',message:'client training tracking response',data:{ok:response.ok,status:response.status},timestamp:Date.now()})}).catch(()=>{});
+          // #endregion
+        }).catch((error: unknown) => {
+          // #region agent log
+          fetch('http://127.0.0.1:7729/ingest/c8d9804c-28f9-4d81-aea6-a8b23bc1b28a',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'6df5d8'},body:JSON.stringify({sessionId:'6df5d8',runId:'pre-fix',hypothesisId:'H2',location:'components/simulations/shared/use-simulation-tracking.ts:95',message:'client training tracking failed',data:{error:error instanceof Error?error.message:String(error)},timestamp:Date.now()})}).catch(()=>{});
+          // #endregion
+        });
       }
     },
     [campaignId, startedAt, token],
